@@ -1,0 +1,58 @@
+{
+  "envVars": {
+    "webPageTestApiKey": "TEST_APIKEY",
+    "psiApiKey": "TEST_APIKEY",
+    "gcpKeyFilePath": "TEST_KEYFILENAME",
+    "gcpProjectId": "TEST_PROJECT_ID"
+  },
+  "tests": [
+    {
+      "selected": true,
+      "label": "Think With Google",
+      "url": "https://thinkwithgoogle.com",
+      "recurring": {
+        "frequency": "Daily",
+        "nextTriggerTimestamp": 1234,
+        "nextTrigger": "Tue Jan 28 2020 03:14:19 GMT-0500 (Eastern Standard Time)",
+        "activatedFrequency": "Daily"
+      },
+      "webpagetest": {
+        "settings": {
+          "locationId": "Dulles_MotoG",
+          "device": "Pixel",
+          "connection": "4G",
+          "runs": 1,
+          "repeatView": true,
+          "timeline": true,
+          "block": null,
+          "script": null
+        },
+        "metadata": {
+          "lastTestId": "200118_KA_4022ee20eaf1deebb393585731de6576"
+        }
+      },
+      "psi": {
+        "settings": {
+          "locale": "en-US",
+          "strategy": "mobile"
+        }
+      },
+      "cruxbigquery": {},
+      "budgets": {
+        "dataSource": "webpagetest",
+        "budget": {
+          "FirstContentfulPaint": 1500,
+          "FirstMeaningfulPaint": 2000,
+          "SpeedIndex": 3000,
+          "TimeToInteractive": 5000,
+          "Javascript": 500,
+          "CSS": 500,
+          "Fonts": 100,
+          "Images": 500,
+          "Videos": 500
+        }
+      },
+      "id": "1580105180079-https://thinkwithgoogle.com"
+    }
+  ]
+}

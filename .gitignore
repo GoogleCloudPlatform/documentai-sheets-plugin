@@ -1,0 +1,10 @@
+.git
+node_modules
+output/
+tmp/
+build/
+dist/
+stats.html
+.cache
+.DS_Store
+service_accounts
