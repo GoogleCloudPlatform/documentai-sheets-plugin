@@ -21,7 +21,9 @@ export default [{
         'path',
         './connectors/json-connector',
         './connectors/csv-connector',
+        './connectors/sheets-connector',
         './helpers/node-helper',
+        './helpers/gcp-handler',
         '@google-cloud/bigquery',
         '../../test/fakedata/psi-response.json', //FIXME: use exclude.
       ],

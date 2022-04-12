@@ -210,7 +210,7 @@ class ResultFramework {
         break;
 
       case 'sheets':
-        ConnectorClass = require ('./connectors/sheets-connector.js');
+        ConnectorClass = require ('./connectors/sheets-connector');
         break;
 
       case 'fake':
