@@ -197,6 +197,10 @@ class ResultFramework {
         ConnectorClass = require('./connectors/json-connector');
         break;
 
+      case 'jsondata':
+        ConnectorClass = require('./connectors/jsondata-connector');
+        break;
+
       case 'csv':
         ConnectorClass = require('./connectors/csv-connector');
         break;
@@ -206,7 +210,7 @@ class ResultFramework {
         break;
 
       case 'sheets':
-        ConnectorClass = require ('./connectors/sheets-connector.js');
+        ConnectorClass = require ('./connectors/sheets-connector');
         break;
 
       case 'fake':
