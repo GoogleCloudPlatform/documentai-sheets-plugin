@@ -17,31 +17,31 @@
 'use strict';
 
 const Status = require('./common/status');
-const {Frequency, FrequencyInMinutes} = require('./common/frequency');
+const { Frequency, FrequencyInMinutes } = require('./common/frequency');
 const assert = require('./utils/assert');
-const {TestType} = require('./common/types');
+const { TestType } = require('./common/types');
 const MultiConnector = require('./connectors/multi-connector');
 const ApiHandler = require('./helpers/api-handler');
 
 /**
- * ResultFramework main class.
- * Please check README.md for more details of the usage ResultFramework instance.
+ * DataCollectionFramework main class.
+ * Please check README.md for more details of the usage DataCollectionFramework instance.
  *
- * Exmaples of creating a new instance of ResultFramework:
- *   let core = new ResultFramework({
+ * Exmaples of creating a new instance of DataCollectionFramework:
+ *   let core = new DataCollectionFramework({
  *     connector: 'JSON',
  *     helper: 'Node',
  *     gathererNames: ['webpagetest'],
  *     extensions: extensions,
  *     json: { // Config for JSON connector.
- *       tests: argv['tests'],
+ *       sources: argv['tests'],
  *       results: argv['results'],
  *     },
  *     verbose: verbose,
  *     debug: debug,
  *   });
  */
-class ResultFramework {
+class DataCollectionFramework {
   /**
    * @param {object} coreConfig The overall config object, including sub-configs
    *     for connetor, helpers, gatherers, and extension modules.
@@ -49,7 +49,7 @@ class ResultFramework {
    * Mandatory properties:
    * - coreConfig.gathererNames {Array<string>} The array of gatherer names.
    *     e.g. ['webpagetest', 'psi']
-   * - coreConfig.tests {object} Settings for tests including connector and path.
+   * - coreConfig.sources {object} Settings for sources including connector and path.
    *     e.g. {'connector': 'json', 'path': '/path/to/tests.json'}
    * - coreConfig.results {object} Settings for results including connector and path.
    *     e.g. {'connector': 'json', 'path': '/path/to/results.json'}
@@ -67,12 +67,12 @@ class ResultFramework {
     this.config = {};
 
     assert(coreConfig, 'coreConfig is missing');
-    assert(coreConfig.tests, 'coreConfig.tests is missing.');
+    assert(coreConfig.sources, 'coreConfig.sources is missing.');
     assert(coreConfig.results, 'coreConfig.results is missing.');
 
     this.coreConfig = coreConfig;
     coreConfig.envVars = coreConfig.envVars || {};
-    this.overallGathererNames = ['webpagetest', 'psi', 'cruxapi', 'cruxbigquery'];
+    this.overallGathererNames = ['docai'];
 
     // Load environment varaibles with coreConfig.envVars.
     this.log(`Use envVars:`);
@@ -86,12 +86,12 @@ class ResultFramework {
     this.log(`Use helper: ${coreConfig.helper}`);
     switch (coreConfig.helper.toLowerCase()) {
       case 'node':
-        let {NodeApiHandler} = require('./helpers/node-helper');
+        let { NodeApiHandler } = require('./helpers/node-helper');
         this.apiHandler = new NodeApiHandler();
         break;
 
       case 'appscript':
-        let {AppScriptApiHandler} = require('./helpers/appscript-helper');
+        let { AppScriptApiHandler } = require('./helpers/appscript-helper');
         this.apiHandler = new AppScriptApiHandler();
         break;
 
@@ -103,28 +103,21 @@ class ResultFramework {
 
       default:
         throw new Error(
-            `Helper ${coreConfig.helper} is not supported.`);
+          `Helper ${coreConfig.helper} is not supported.`);
         break;
     }
 
     // Create connector instance(s).
-    coreConfig.tests.connector = coreConfig.tests.connector || 'json';
-    coreConfig.results.connector = coreConfig.results.connector || 'json';
-    this.log(`Use connector for tests: ${JSON.stringify(coreConfig.tests.connector)}`);
+    coreConfig.sources.connector = coreConfig.sources.connector;
+    coreConfig.results.connector = coreConfig.results.connector;
+    this.log(`Use connector for sources: ${JSON.stringify(coreConfig.sources.connector)}`);
     this.log(`Use connector for results: ${JSON.stringify(coreConfig.results.connector)}`);
 
-    // When using the same connector for both tests and results, initialize
-    // just one connector.
-    if (coreConfig.tests.connector === coreConfig.results.connector) {
-      this.connector = this.getConnector(coreConfig.tests.connector);
-
     // When using different connectors, initialize a MultiConnector.
-    } else {
-      let testsConnector = this.getConnector(coreConfig.tests.connector);
-      let resultsConnector = this.getConnector(coreConfig.results.connector);
-      this.connector = new MultiConnector(coreConfig, this.apiHandler,
-          this.envVars, testsConnector, resultsConnector);
-    }
+    let sourcesConnector = this.getConnector(coreConfig.sources.connector);
+    let resultsConnector = this.getConnector(coreConfig.results.connector);
+    this.connector = new MultiConnector(coreConfig, this.apiHandler,
+      this.envVars, sourcesConnector, resultsConnector);
 
     // Note that API Keys used by Gatherers are expected to be loaded as envVars
     // via either connector or coreConfig.
@@ -150,21 +143,17 @@ class ResultFramework {
         extConfig.debug = this.debug;
 
         switch (extension) {
-          case 'budgets':
-            ExtensionClass = require('./extensions/budgets-extension');
-            break;
-
           case 'appscript':
             ExtensionClass = require('./extensions/appscript-extension');
             break;
 
           default:
             throw new Error(
-                `Extension ${extension} is not supported.`);
+              `Extension ${extension} is not supported.`);
             break;
         }
         this.extensions[extension] = new ExtensionClass(extConfig,
-            this.envVars);
+          this.envVars);
       });
     }
 
@@ -173,7 +162,7 @@ class ResultFramework {
 
     // The frequency of when to write data back via a connector.
     // E.g. batchUpdateBuffer = 10 means for every 10 run or retrieve, it will
-    // update the data by calling connector.updateTestList or updateResultList.
+    // update the data by calling connector.updateSourceList or updateResultList.
     // When batchUpdateBuffer is 0, it will write back after all iteration.
     this.batchUpdateBuffer = coreConfig.batchUpdateBuffer || 0;
   }
@@ -187,7 +176,7 @@ class ResultFramework {
     let ConnectorClass = null, connectorName = name.toLowerCase();
     let connectorConfig = this.coreConfig[connectorName] || {};
 
-    connectorConfig.testsPath = this.coreConfig.tests.path;
+    connectorConfig.sourcesPath = this.coreConfig.sources.path;
     connectorConfig.resultsPath = this.coreConfig.results.path;
     connectorConfig.verbose = this.coreConfig.verbose;
     connectorConfig.debug = this.coreConfig.debug;
@@ -210,7 +199,7 @@ class ResultFramework {
         break;
 
       case 'sheets':
-        ConnectorClass = require ('./connectors/sheets-connector');
+        ConnectorClass = require('./connectors/sheets-connector');
         break;
 
       case 'fake':
@@ -278,7 +267,7 @@ class ResultFramework {
           break;
       }
       this.gatherers[name] = new GathererClass(gathererConfig, this.envVars,
-          this.apiHandler, options);
+        this.apiHandler, options);
     }
     return this.gatherers[name];
   }
@@ -300,13 +289,13 @@ class ResultFramework {
   }
 
   /**
-   * Run tests and writes output to results.
+   * Run sources and writes output to results.
    * @param {object} options
-   * @return {object} Processed Tests and Results.
+   * @return {object} Processed Sources and Results.
    *
    * Available options:
    * - filters {Array<string>}: Use `options.filters` to filter
-   *     tests that match conditions. See `src/utils/pattern-filter.js` for
+   *     sources that match conditions. See `src/utils/pattern-filter.js` for
    *     more details.
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
@@ -316,15 +305,15 @@ class ResultFramework {
     let extensions = options.extensions || Object.keys(this.extensions);
     let extResponse, overallErrors = [];
 
-    let tests = await this.connector.getTestList(options);
-    console.log(`Run with ${tests.length} test(s)`);
+    let sources = await this.connector.getSourceLIst(options);
+    console.log(`Run with ${sources.length} test(s)`);
 
     // Before all runs.
-    extResponse = this.runExtensions(extensions, 'beforeAllRuns', {tests: tests}, options);
+    extResponse = this.runExtensions(extensions, 'beforeAllRuns', { sources: sources }, options);
     overallErrors = overallErrors.concat(extResponse.errors);
 
     // Run tests.
-    let newResults = await this.runTests(tests, options);
+    let newResults = await this.execute(sources, options);
 
     // Collect all errors.
     newResults.forEach(result => {
@@ -335,33 +324,33 @@ class ResultFramework {
 
     // After all runs.
     extResponse = this.runExtensions(extensions, 'afterAllRuns', {
-      tests: tests,
+      sources: sources,
       results: newResults,
     }, options);
     overallErrors = overallErrors.concat(extResponse.errors);
 
     if (overallErrors.length > 0) {
-      console.log(`Run completed for ${tests.length} tests with errors:`);
+      console.log(`Run completed for ${sources.length} sources with errors:`);
       console.log(overallErrors);
     } else {
-      console.log(`Run completed for ${tests.length} tests.`);
+      console.log(`Run completed for ${sources.length} tests.`);
     }
 
     return {
-      tests: tests,
+      sources: sources,
       results: newResults,
       errors: overallErrors,
     };
   }
 
   /**
-   * Run recurring tests and writes output to results.
+   * Run recurring sources and writes output to results.
    * @param {object} options
-   * @return {object} Procssed Tests and Results.
+   * @return {object} Procssed Sources and Results.
    *
    * Available options:
    * - filters {Array<string>}: Use `options.filters` to filter
-   *     tests that match conditions. See `src/utils/pattern-filter.js` for
+   *     sources that match conditions. See `src/utils/pattern-filter.js` for
    *     more details.
    * - activateOnly {boolean}: When true, only update the nextTriggerTimestamp
    *     to a Test object without running actual audit.
@@ -374,90 +363,90 @@ class ResultFramework {
 
     let extensions = options.extensions || Object.keys(this.extensions);
     let extResponse, overallErrors = [];
-    let testsToUpdate = [], resultsToUpdate = [];
+    let sourcesToUpdate = [], resultsToUpdate = [];
     let newResults = [];
     let nowtime = Date.now();
 
-    // Get recurring Tests that passed nextTriggerTimestamp only.
-    let tests = await this.connector.getTestList(options);
-    tests = tests.filter(test => {
+    // Get recurring Sources that passed nextTriggerTimestamp only.
+    let sources = await this.connector.getSourceLIst(options);
+    sources = sources.filter(source => {
       let recurring = test.recurring;
       return recurring && recurring.frequency &&
-          Frequency[recurring.frequency.toUpperCase()];
+        Frequency[recurring.frequency.toUpperCase()];
     });
 
     // Before all runs.
-    extResponse = this.runExtensions(extensions, 'beforeAllRuns', {tests: tests}, options);
+    extResponse = this.runExtensions(extensions, 'beforeAllRuns', { sources: sources }, options);
     overallErrors = overallErrors.concat(extResponse.errors);
 
     if (options.activateOnly) {
-      console.log(`Run recurring with ${tests.length} test(s), activate only.`);
+      console.log(`Run recurring with ${sources.length} source(s), activate only.`);
 
       // Update next trigger timestamp only.
-      tests.forEach(test => {
+      sources.forEach(source => {
         // Before each run.
         this.runExtensions(extensions, 'beforeRun', {
-          test: test,
+          source: source,
           result: null,
         }, options);
 
-        this.logDebug('ResultFramework::recurring with activateOnly.');
-        this.updateNextTriggerTimestamp(test);
+        this.logDebug('DataCollectionFramework::recurring with activateOnly.');
+        this.updateNextTriggerTimestamp(source);
 
         // After each run with empty result.
         this.runExtensions(extensions, 'afterRun', {
-          test: test,
+          source: source,
           result: null,
         }, options);
       });
 
     } else {
-      // Filter Tests that have passed nextTriggerTimestamp or haven't set with
+      // Filter Sources that have passed nextTriggerTimestamp or haven't set with
       // nextTriggerTimestamp.
-      tests = tests.filter(test => {
-        let recurring = test.recurring;
+      sources = sources.filter(source => {
+        let recurring = source.recurring;
         return recurring &&
-            (!recurring.nextTriggerTimestamp ||
+          (!recurring.nextTriggerTimestamp ||
             recurring.nextTriggerTimestamp <= nowtime);
       });
-      console.log(`Run recurring with ${tests.length} test(s).`);
+      console.log(`Run recurring with ${sources.length} source(s).`);
 
-      // Run tests and updates next trigger timestamp.
-      newResults = await this.runTests(tests, options);
+      // Run sources and updates next trigger timestamp.
+      newResults = await this.execute(sources, options);
 
       // Update next trigger timestamp.
-      tests.forEach(test => {
-        this.updateNextTriggerTimestamp(test);
+      sources.forEach(source => {
+        this.updateNextTriggerTimestamp(source);
       });
     }
 
     // Before all runs.
     extResponse = this.runExtensions(extensions, 'afterAllRuns', {
-      tests: tests,
+      sources: sources,
       results: newResults,
     }, options);
     overallErrors = overallErrors.concat(extResponse.errors);
 
-    // Update Tests.
-    await this.connector.updateTestList(tests, options);
+    // Update sources.
+    await this.connector.updateSourceList(sources, options);
 
-    console.log(`Recurring completed with ${tests.length} ` + `tests`);
+    console.log(`Recurring completed with ${sources.length} ` + `sources`);
 
     return {
-      tests: tests,
+      sources: sources,
       results: newResults,
       errors: overallErrors,
     };
   }
 
   /**
-   * Continuously run ResultFramework for recurring tests and retrieve pending results.
+   * Continuously run DataCollectionFramework for recurring sources and retrieve pending results.
    * @param {object} options
-   * @return {object} Procssed Tests and Results.
+   * @return {object} Procssed Sources and Results.
    *
    * Available options:
    * - filters {Array<string>}: Use `options.filters` to filter
-   *     tests that match conditions. See `src/utils/pattern-filter.js` for
+   *     sources that match conditions. See `src/utils/pattern-filter.js` for
    *     more details.
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
@@ -470,7 +459,7 @@ class ResultFramework {
 
     // Set timer interval as every 10 mins by default.
     let timerInterval = options.timerInterval ?
-        parseInt(options.timerInterval) : 60 * 10;
+      parseInt(options.timerInterval) : 60 * 10;
 
     if (options.verbose) {
       this.log(`Timer interval sets as ${timerInterval} seconds.`);
@@ -501,7 +490,7 @@ class ResultFramework {
    *
    * Available options:
    * - filters {Array<string>}: Use `options.filters` to filter
-   *     tests that match conditions. See `src/utils/pattern-filter.js` for
+   *     sources that match conditions. See `src/utils/pattern-filter.js` for
    *     more details.
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
@@ -518,8 +507,8 @@ class ResultFramework {
       result.errors = [];
     });
 
-    extResponse = this.runExtensions(extensions, 'beforeAllRetrieves', [] /* tests */,
-        results, options);
+    extResponse = this.runExtensions(extensions, 'beforeAllRetrieves', [] /* sources */,
+      results, options);
     overallErrors = overallErrors.concat(extResponse.errors);
 
     // Default filter for penging results only.
@@ -533,15 +522,15 @@ class ResultFramework {
     // FIXME: Add batch gathering support.
 
     let count = 0;
-    for (let i=0; i<results.length; i++) {
+    for (let i = 0; i < results.length; i++) {
       let result = results[i];
       this.log(`Retrieve: id=${result.id}`);
-      this.logDebug('ResultFramework::retrieve, result=\n', result);
+      this.logDebug('DataCollectionFramework::retrieve, result=\n', result);
       result.errors = result.errors || [];
 
       // Before retriving the result.
       extResponse = this.runExtensions(extensions, 'beforeRetrieve',
-          {result: result}, options);
+        { result: result }, options);
       result.errors = result.errors.concat(extResponse.errors);
 
       let statuses = [];
@@ -550,13 +539,13 @@ class ResultFramework {
 
       // Interate through all gatherers.
       let gathererNames = this.overallGathererNames.concat(
-          this.parseGathererNames(result.gatherer));
+        this.parseGathererNames(result.gatherer));
       [...new Set(gathererNames)].forEach(gathererName => {
         if (!result[gathererName]) return;
         if (result[gathererName].status === Status.RETRIEVED) return;
 
         let response = this.getGatherer(gathererName).retrieve(
-            result, {debug: true});
+          result, { debug: true });
         statuses.push(response.status);
         newResult[gathererName] = response;
 
@@ -567,26 +556,26 @@ class ResultFramework {
       newResult.errors = result.errors.concat(this.getOverallErrors(newResult));
 
       // Update overall status.
-      newResult.status =  this.getOverallStatus(statuses);
+      newResult.status = this.getOverallStatus(statuses);
 
       // After retrieving the result.
       extResponse = this.runExtensions(extensions, 'afterRetrieve',
-          {result: newResult}, options);
+        { result: newResult }, options);
       newResult.errors = newResult.errors.concat(extResponse.errors);
 
       this.log(`Retrieve: overall status=${newResult.status}`);
-      this.logDebug('ResultFramework::retrieve, statuses=\n', statuses);
-      this.logDebug('ResultFramework::retrieve, newResult=\n', newResult);
+      this.logDebug('DataCollectionFramework::retrieve, statuses=\n', statuses);
+      this.logDebug('DataCollectionFramework::retrieve, newResult=\n', newResult);
 
       resultsToUpdate.push(newResult);
 
       // Batch update to the connector.
       if (this.batchUpdateBuffer &&
-          resultsToUpdate.length >= this.batchUpdateBuffer) {
+        resultsToUpdate.length >= this.batchUpdateBuffer) {
         await this.connector.updateResultList(resultsToUpdate, options);
         this.log(
-            `ResultFramework::retrieve, batch appends ` +
-            `${resultsToUpdate.length} results.`);
+          `DataCollectionFramework::retrieve, batch appends ` +
+          `${resultsToUpdate.length} results.`);
 
         resultsToUpdate = [];
       }
@@ -598,7 +587,7 @@ class ResultFramework {
     // After retriving all results.
     // FIXME: run the extensions before updating the list back to the connector.
     extResponse = this.runExtensions(extensions, 'afterAllRetrieves',
-        {results: results}, options);
+      { results: results }, options);
     overallErrors = overallErrors.concat(extResponse.errors);
 
     if (overallErrors.length > 0) {
@@ -621,55 +610,55 @@ class ResultFramework {
    *
    * Available options:
    * - filters {Array<string>}: Use `options.filters` to filter
-   *     tests that match conditions. See `src/utils/pattern-filter.js` for
+   *     sources that match conditions. See `src/utils/pattern-filter.js` for
    *     more details.
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
    * @return {type}          description
    */
-  async runTests(tests, options) {
+  async execute(sources, options) {
     options = options || {};
     let extensions = options.extensions || Object.keys(this.extensions);
     let resultsToUpdate = [], allNewResults = [];
     let extResponse;
 
     // Before each run.
-    tests.forEach(test => {
-      extResponse = this.runExtensions(extensions, 'beforeRun', {test: test});
+    sources.forEach(source => {
+      extResponse = this.runExtensions(extensions, 'beforeRun', { test: test });
       test.errors = extResponse.errors;
     });
 
     if (options.runByBatch) {
-      // Run Tests with gatherers that uses run batch mode.
+      // Run sources with gatherers that uses run batch mode.
       // Note that run batch mode doesn't support batch update to the connector.
-      let gathererNames = [], testResultPairs = [];
-      tests.forEach(test => {
-        testResultPairs.push({
-          test: test,
-          result: this.createNewResult(test, options),
+      let gathererNames = [], sourceResultPairs = [];
+      sources.forEach(source => {
+        sourceResultPairs.push({
+          source: source,
+          result: this.createNewResult(source, options),
         });
-        gathererNames = gathererNames.concat(this.parseGathererNames(test.gatherer));
+        gathererNames = gathererNames.concat(this.parseGathererNames(source.gatherer));
       });
 
       // Run all gatherers.
       gathererNames = gathererNames.concat(this.parseGathererNames(options.gatherer));
-      for(const gathererName of [...new Set(gathererNames)]) {
-        await this.runGathererInBatch(tests, gathererName, options).then(responseList => {
-          if(responseList)
-            for (let i = 0; i<testResultPairs.length; i++) {
-              testResultPairs[i].result[gathererName] = responseList[i];
+      for (const gathererName of [...new Set(gathererNames)]) {
+        await this.runGathererInBatch(sources, gathererName, options).then(responseList => {
+          if (responseList)
+            for (let i = 0; i < sourceResultPairs.length; i++) {
+              sourceResultPairs[i].result[gathererName] = responseList[i];
             }
         });
       }
 
       // Update overall status and after each run.
-      testResultPairs.forEach(pair => {
+      sourceResultPairs.forEach(pair => {
         let result = pair.result;
 
         // Update the overall status.
         let statuses = this.overallGathererNames.map(gathererName => {
           return result[gathererName] ?
-              result[gathererName].status : Status.RETRIEVED;
+            result[gathererName].status : Status.RETRIEVED;
         });
         result.status = this.getOverallStatus(statuses);
 
@@ -693,18 +682,18 @@ class ResultFramework {
 
     } else {
       // Run one test at a time and collect metrics from all gatherers.
-      for(let i=0; i<tests.length; i++) {
-        let test = tests[i];
+      for (let i = 0; i < sources.length; i++) {
+        let source = sources[i];
         let statuses = [];
 
         // Create a dummy Result.
-        let newResult = this.createNewResult(test, options);
+        let newResult = this.createNewResult(source, options);
 
         // Collect metrics from all gatherers.
-        let gathererNames = this.parseGathererNames(test.gatherer);
+        let gathererNames = this.parseGathererNames(source.gatherer);
         gathererNames = gathererNames.concat(this.parseGathererNames(options.gatherer));
-        [...new Set(gathererNames)].forEach(gathererName =>  {
-          let response = this.runGatherer(test, gathererName, options);
+        [...new Set(gathererNames)].forEach(gathererName => {
+          let response = this.runGatherer(source, gathererName, options);
           if (response) {
             newResult[gathererName] = response;
             statuses.push(newResult[gathererName].status);
@@ -724,16 +713,16 @@ class ResultFramework {
         });
         newResult.errors = newResult.errors.concat(extResponse.errors);
 
-        // Collect tests and results for batch update if applicable.
+        // Collect sources and results for batch update if applicable.
         resultsToUpdate.push(newResult);
         allNewResults.push(newResult);
 
         // Batch update to the connector if the buffer is full.
         if (this.batchUpdateBuffer &&
-            resultsToUpdate.length >= this.batchUpdateBuffer) {
+          resultsToUpdate.length >= this.batchUpdateBuffer) {
           await this.connector.appendResultList(resultsToUpdate, options);
-          this.log(`ResultFramework::retrieve, batch appends ` +
-              `${resultsToUpdate.length} results.`);
+          this.log(`DataCollectionFramework::retrieve, batch appends ` +
+            `${resultsToUpdate.length} results.`);
           resultsToUpdate = [];
         }
       }
@@ -749,12 +738,12 @@ class ResultFramework {
    * Run through all extensions.
    * @param {Array<string>} extensions Array of extension names
    * @param {string} functionName The function to execute in the extention.
-   * @param {object} context Context object that includes tests and results.
+   * @param {object} context Context object that includes sources and results.
    * @param {object} options
    *
    * Available options:
    * - filters {Array<string>}: Use `options.filters` to filter
-   *     tests that match conditions. See `src/utils/pattern-filter.js` for
+   *     sources that match conditions. See `src/utils/pattern-filter.js` for
    *     more details.
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
@@ -787,7 +776,7 @@ class ResultFramework {
    *
    * Available options:
    * - filters {Array<string>}: Use `options.filters` to filter
-   *     tests that match conditions. See `src/utils/pattern-filter.js` for
+   *     sources that match conditions. See `src/utils/pattern-filter.js` for
    *     more details.
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
@@ -813,7 +802,7 @@ class ResultFramework {
 
   /**
    * Run all gatherers and return a detailed response from a gatherer.
-   * @param  {type} tests      description
+   * @param  {type} sources      description
    * @param  {type} gathererName description
    * @param  {type} options    description
    * @return {type}            description
@@ -834,7 +823,7 @@ class ResultFramework {
       });
 
     } catch (error) {
-      responseList = tests.map(test => {
+      responseList = tests.map(source => {
         return {
           status: Status.ERROR,
           statusText: error.stack,
@@ -877,14 +866,14 @@ class ResultFramework {
    *
    * Available options:
    * - filters {Array<string>}: Use `options.filters` to filter
-   *     tests that match conditions. See `src/utils/pattern-filter.js` for
+   *     sources that match conditions. See `src/utils/pattern-filter.js` for
    *     more details.
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
    */
-  async getTests(options) {
+  async getSources(options) {
     options = options || {};
-    let tests = await this.connector.getTestList(options);
+    let sources = await this.connector.getSourceLIst(options);
     return tests;
   }
 
@@ -895,7 +884,7 @@ class ResultFramework {
    *
    * Available options:
    * - filters {Array<string>}: Use `options.filters` to filter
-   *     tests that match conditions. See `src/utils/pattern-filter.js` for
+   *     sources that match conditions. See `src/utils/pattern-filter.js` for
    *     more details.
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
@@ -985,4 +974,4 @@ class ResultFramework {
   }
 }
 
-module.exports = ResultFramework;
+module.exports = DataCollectionFramework;

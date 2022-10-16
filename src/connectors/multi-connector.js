@@ -24,24 +24,24 @@ const Connector = require('./connector');
  * store. This connector works together with `src/helpers/node-helper.js`.
  */
 class MultiConnector extends Connector {
-  constructor(config, apiHandler, envVars, testsConnector, resultsConnector) {
+  constructor(config, apiHandler, envVars, sourcesConnector, resultsConnector) {
     super(config, apiHandler, envVars);
     this.apiHandler = apiHandler;
 
-    this.testsConnector = testsConnector;
+    this.sourcesConnector = sourcesConnector;
     this.resultsConnector = resultsConnector;
   }
 
   getEnvVars() {
-    return this.testsConnector.getEnvVars();
+    return this.sourcesConnector.getEnvVars();
   }
 
-  getTestList(options) {
-    return this.testsConnector.getTestList(options);
+  getSourceList(options) {
+    return this.sourcesConnector.getSourceList(options);
   }
 
-  updateTestList(newTests, options) {
-    return this.testsConnector.updateTestList(newTests, options);
+  updateSourceList(newSources, options) {
+    return this.sourcesConnector.updateSourceList(newSources, options);
   }
 
   getResultList(options) {

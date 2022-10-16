@@ -29,11 +29,11 @@ class AppScriptApiHandler extends ApiHandler {
         body: response.getContentText(),
       };
 
-    } catch(e) {
+    } catch (e) {
       console.error('There was an error while fetching ' + url);
       console.error(e);
 
-      return  {
+      return {
         statusCode: e.code || 500,
         statusText: e.message,
         error: e
@@ -44,25 +44,25 @@ class AppScriptApiHandler extends ApiHandler {
   post(url, postOptions) {
     try {
       let fetchOptions = {
-        'method' : 'post'
+        'method': 'post'
       };
 
-      if(postOptions.json) {
+      if (postOptions.json) {
         fetchOptions.payload = JSON.stringify(postOptions.json);
         fetchOptions.contentType = 'application/json';
       } else
         fetchOptions.payload = postOptions.body;
 
       let response = UrlFetchApp.fetch(url, fetchOptions);
-      return  {
+      return {
         statusCode: response.getResponseCode(),
         body: response.getContentText()
       }
-    } catch(e) {
+    } catch (e) {
       console.error('There was an error while fetching ' + url);
       console.error(e);
 
-      return  {
+      return {
         statusCode: e.code || 500,
         statusText: e.message,
         error: e
@@ -72,7 +72,7 @@ class AppScriptApiHandler extends ApiHandler {
 }
 
 const TabRole = {
-  TESTS: 'tests',
+  sources: 'tests',
   RESULTS: 'results',
   ENV_VARS: 'envVars',
   SYSTEM: 'system',
@@ -95,7 +95,7 @@ const AppScriptHelper = {
   toMD5: (message) => {
     message = message || 'thisisteststring';
     var signature = Utilities.computeDigest(
-        Utilities.DigestAlgorithm.MD5, message, Utilities.Charset.US_ASCII);
+      Utilities.DigestAlgorithm.MD5, message, Utilities.Charset.US_ASCII);
     var signatureStr = '';
     for (let i = 0; i < signature.length; i++) {
       var byte = signature[i];
@@ -114,9 +114,9 @@ const AppScriptHelper = {
   createOnEditTrigger: (functionName) => {
     // Check if trigger exists and create it if not.
     var trigger = ScriptApp.newTrigger(functionName)
-                          .forSpreadsheet(SpreadsheetApp.getActive())
-                          .onEdit()
-                          .create();
+      .forSpreadsheet(SpreadsheetApp.getActive())
+      .onEdit()
+      .create();
     return trigger.getUniqueId();
   },
 
@@ -126,9 +126,9 @@ const AppScriptHelper = {
   createTimeBasedTrigger: (functionName, minutes) => {
     // Check if trigger exists and create it if not.
     var trigger = ScriptApp.newTrigger(functionName)
-                          .timeBased()
-                          .everyMinutes(minutes || 10)
-                          .create();
+      .timeBased()
+      .everyMinutes(minutes || 10)
+      .create();
     return trigger.getUniqueId();
   },
 
@@ -213,7 +213,7 @@ const AppScriptHelper = {
    */
   getFormattedDate: (dateInput, timeZone, format) => {
     return Utilities.formatDate(dateInput, timeZone,
-        format || 'MM/dd/YYYY HH:mm (Z)');
+      format || 'MM/dd/YYYY HH:mm (Z)');
   },
 }
 

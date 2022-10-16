@@ -29,7 +29,7 @@ const { GoogleSpreadsheet } = require('google-spreadsheet');
 class SheetsConnector extends Connector {
   constructor(config, apiHandler, envVars) {
     super(config, apiHandler, envVars);
-    [this.testsSheetId, this.testsSheetName] = config.testsPath.split('/');
+    [this.testsSheetId, this.testsSheetName] = config.sourcesPath.split('/');
     [this.resultsSheetId, this.resultsSheetName] = config.resultsPath.split('/');
     this.keyFilename = envVars.SERVICE_ACCOUNT_CREDENTIALS;
     this.tests = null;
@@ -38,25 +38,25 @@ class SheetsConnector extends Connector {
 
     assert(this.keyFilename, 'SERVICE_ACCOUNT_CREDENTIALS is missing in envVars.');
 
-    if (!this.testsSheetName) this.testsSheetName = 'Tests';
+    if (!this.testsSheetName) this.testsSheetName = 'Sources';
     if (!this.resultsSheetName) this.resultsSheetName = 'Results';
   }
 
   async getSheet(sheetId) {
     const doc = new GoogleSpreadsheet(sheetId);
     await doc.useServiceAccountAuth(require(this.basedir + '/' + this.keyFilename));
-    await doc.loadInfo(); // loads document properties and worksheets    
+    await doc.loadInfo(); // loads document properties and worksheets
     return doc;
   }
 
-  async getTestsSheet() {
+  async getSourcesSheet() {
     if (this.testsSheet) return this.testsSheet;
 
-    assert(this.testsSheetId, 'testsSheetId is not defined in config.testsPath.');
+    assert(this.testsSheetId, 'testsSheetId is not defined in config.sourcesPath.');
     this.testsDoc = await this.getSheet(this.testsSheetId);
     this.testsSheet = this.testsDoc.sheetsByTitle[this.testsSheetName];
 
-    assert(this.testsSheet, `Unable to locate Tests sheet "${this.testsSheetName}"`);
+    assert(this.testsSheet, `Unable to locate Sources sheet "${this.testsSheetName}"`);
     return this.testsSheet;
   }
 
@@ -69,7 +69,7 @@ class SheetsConnector extends Connector {
 
     // Create a new sheet if the sheet doesn't exist.
     if (!this.resultsSheet) {
-      this.resultsSheet = await this.resultsDoc.addSheet({title: this.resultsSheetName});
+      this.resultsSheet = await this.resultsDoc.addSheet({ title: this.resultsSheetName });
     }
 
     return this.resultsSheet;
@@ -118,7 +118,7 @@ class SheetsConnector extends Connector {
   }
 
   async updateSheetData(sheet, newObjs) {
-    newObjs = this.stringifyRows(newObjs);    
+    newObjs = this.stringifyRows(newObjs);
     await this.updateHeaders(sheet, newObjs);
     const rows = await sheet.getRows();
 
@@ -131,7 +131,7 @@ class SheetsConnector extends Connector {
       let rowIndex = newObj['sheets.index'];
       delete newObj['sheets.index'];
 
-      if (typeof(rowIndex) === 'undefined') {
+      if (typeof (rowIndex) === 'undefined') {
         console.error('Unable to locate a specific row to Sheets.');
         console.log(newObj);
         throw new Error('Unable to locate a specific row to Sheets.');
@@ -188,7 +188,7 @@ class SheetsConnector extends Connector {
     results.forEach(result => {
       rowsToAdd.push(flattenObject(result));
     });
-    rowsToAdd = this.stringifyRows(rowsToAdd);    
+    rowsToAdd = this.stringifyRows(rowsToAdd);
     await this.updateHeaders(sheet, rowsToAdd);
 
     if (this.debug) {
@@ -210,7 +210,7 @@ class SheetsConnector extends Connector {
         columnCount: sheet.columnCount,
       });
       await sheet.addRows(rowsToAdd);
-      await sheet.saveUpdatedCells();  
+      await sheet.saveUpdatedCells();
     }
   }
 
@@ -232,12 +232,12 @@ class SheetsConnector extends Connector {
    * @param  {Object} options
    * @return {Array<Object>} Array of Test objects.
    */
-  async getTestList(options) {
-    let tests = await this.readSheetData(await this.getTestsSheet());
-    tests = this.jsonify(tests);
+  async getSourceLIst(options) {
+    let sources = await this.readSheetData(await this.getSourcesSheet());
+    sources = this.jsonify(tests);
 
     if (this.debug) {
-      console.log(`SheetsAPI: Got tests from sheet "${this.testsSheetName}":`);
+      console.log(`SheetsAPI: Got sources from sheet "${this.testsSheetName}":`);
       console.log(tests);
     }
 
@@ -245,20 +245,20 @@ class SheetsConnector extends Connector {
   }
 
   /**
-   * Update tests with the given new test objects.
+   * Update sources with the given new test objects.
    * @param {Array<Object>} Array of new Test objects.
    * @param  {Object} options
    */
-  async updateTestList(newTests, options) {
+  async updateSourceList(newSources, options) {
     var rowsToAdd = [];
-    newTests.forEach(test => {
+    newSources.forEach(source => {
       rowsToAdd.push(flattenObject(test));
     });
 
-    await this.updateSheetData(await this.getTestsSheet(), rowsToAdd);
-    this.tests = null;    
+    await this.updateSheetData(await this.getSourcesSheet(), rowsToAdd);
+    this.tests = null;
   }
-  
+
   /**
    * Get all results.
    * @param  {Object} options
@@ -270,7 +270,7 @@ class SheetsConnector extends Connector {
 
     let results = await this.readSheetData(await this.getResultsSheet());
     if (this.debug) {
-      console.log(`SheetsAPI: Got tests from sheet "${this.resultsSheetName}":`);
+      console.log(`SheetsAPI: Got sources from sheet "${this.resultsSheetName}":`);
       console.log(results);
     }
     return results;
@@ -305,11 +305,11 @@ class SheetsConnector extends Connector {
 
     if (this.debug) {
       console.log(`Appending ${newResults.length} results to the existing ` +
-          `file at ${this.resultsPath}`);
+        `file at ${this.resultsPath}`);
     }
 
-    await this.writeSheetData(await this.getResultsSheet(), newResults, 
-        options.overrideResults);
+    await this.writeSheetData(await this.getResultsSheet(), newResults,
+      options.overrideResults);
 
     // Reset the results json cache.
     this.results = null;
@@ -321,7 +321,7 @@ class SheetsConnector extends Connector {
    * @param {Object} options
    */
   async updateResultList(newResults, options) {
-    if(!this.results)
+    if (!this.results)
       this.authorize();
 
     let results = this.getResultList();

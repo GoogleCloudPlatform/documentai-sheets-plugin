@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-const ResultFramework = require('./core');
+const DataCollectionFramework = require('./core');
 const argv = require('minimist')(process.argv.slice(2));
 const assert = require('./utils/assert');
-const {NodeHelper} = require('./helpers/node-helper');
+const { NodeHelper } = require('./helpers/node-helper');
 
 const printUsage = () => {
   let usage = `
@@ -30,13 +30,13 @@ Available Actions:
   retrieve\tRetrieve pending results in a results list.
 
 Mandatory arguments:
-  tests\t\tThe path to the tests list in JSON. E.g. examples/tests.json. To specify a different connector, use <connector>:<path>. E.g. csv:example/tests.csv.
+  tests\t\tThe path to the sources list in JSON. E.g. examples/tests.json. To specify a different connector, use <connector>:<path>. E.g. csv:example/tests.csv.
   results\t\tThe path to the results output in JSON. E.g. output/results.json. To specify a different connector, use <connector>:<path>. E.g. csv:tmp/results.csv.
 
 Options (*denotes default value if not passed in):
   gatherers\t\ttComma-separated list of data sources. Default: psi.
   extensions\t\tComma-separated list of extensions. Default: null.
-  config\t\tLoad a custom coreConfig. See examples/awp-config.json for example. If the config parameter is given, the tests and results parameters will be ignored.
+  config\t\tLoad a custom coreConfig. See examples/awp-config.json for example. If the config parameter is given, the sources and results parameters will be ignored.
   override-results\tWhether to append results to the existing result list. Default: false.
   timer-interval\tSet the timer interval for executing recurring continuously.
   verbose\t\tPrint out verbose logs.
@@ -49,16 +49,16 @@ Examples:
   # Run tests
   ./docsheet run examples/tests.json output/results.json
 
-  # Run tests from a CSV file and writes results to a JSON file.
+  # Run sources from a CSV file and writes results to a JSON file.
   ./docsheet run csv:examples/tests.csv json:output/results.json
 
-  # Run recurring tests continuously. Press CTRL/Command+C to stop.
+  # Run recurring sources continuously. Press CTRL/Command+C to stop.
   ./docsheet continue examples/tests-recurring.json output/results.json
 
-  # Run PageSpeedInsight tests with an API Key.
+  # Run PageSpeedInsight sources with an API Key.
   PSI_APIKEY=<YOUR_API_KEY> ./docsheet run examples/tests.json output/results.json
 
-  # Run WebPageTest tests with an API Key.
+  # Run WebPageTest sources with an API Key.
   WPT_APIKEY=<YOUR_API_KEY> ./docsheet run examples/tests-wpt.json output/results.json
 
   # Retrieve pending results (For WebPageTest usage)
@@ -67,10 +67,10 @@ Examples:
   # Retrieve from CrUX API
   CRUX_APIKEY=<YOUR_API_KEY> ./docsheet run examples/tests-cruxapi.json output/results.json
 
-  # Run tests with budget extension
+  # Run sources with budget extension
   ./docsheet run examples/tests.json output/results.json --extensions=budgets
 
-  # Run tests and override existing results in the output file.
+  # Run sources and override existing results in the output file.
   ./docsheet run examples/tests.json output/results.json --override-results
 
   # Run a single test with a specific URL via URL-Connector.
@@ -104,7 +104,7 @@ const parseVars = (varString) => {
  */
 async function begin() {
   let action = argv['_'][0], output = argv['output'];
-  let testsPath = argv['_'][1];
+  let sourcesPath = argv['_'][1];
   let resultsPath = argv['_'][2];
   let config = argv['config'];
   let overrideResults = argv['override-results'];
@@ -112,7 +112,7 @@ async function begin() {
   let activateOnly = argv['activate-only'];
   let gatherers = argv['gatherers'] ? argv['gatherers'].split(',') : null;
   let extensions = argv['extensions'] ? argv['extensions'].split(',') : [];
-  let runByBatch = argv['batch-mode'] ?  true : false;
+  let runByBatch = argv['batch-mode'] ? true : false;
   // let envVars = parseVars(argv['envVars']);
   let debug = argv['debug'];
   let verbose = argv['verbose'];
@@ -126,7 +126,7 @@ async function begin() {
   });
 
   // Assert mandatory parameters, except if the config is given.
-  if (!config && (!action || !testsPath || !resultsPath)) {
+  if (!config && (!action || !sourcesPath || !resultsPath)) {
     printUsage();
     return;
   }
@@ -135,27 +135,27 @@ async function begin() {
     coreConfig = NodeHelper.getJsonFromFile(config);
 
   } else {
-    assert(testsPath, `'tests' parameter is missing.`);
+    assert(sourcesPath, `'tests' parameter is missing.`);
     assert(resultsPath, `'results' parameter is missing.`);
 
     if (argv['selectedOnly']) filters.push('selected');
 
     // Parse connector names.
-    let testsConnector = 'json', resultsConnector = 'json';
-    if (testsPath.indexOf(':') >= 0) {
-      testsConnector = testsPath.slice(0, testsPath.indexOf(':'));
-      testsPath = testsPath.slice(testsPath.indexOf(':') + 1);
+    let sourcesConnector = 'json', resultsConnector = 'json';
+    if (sourcesPath.indexOf(':') >= 0) {
+      sourcesConnector = sourcesPath.slice(0, sourcesPath.indexOf(':'));
+      sourcesPath = sourcesPath.slice(sourcesPath.indexOf(':') + 1);
     }
     if (resultsPath.indexOf(':') >= 0) {
       resultsConnector = resultsPath.slice(0, resultsPath.indexOf(':'));;
       resultsPath = resultsPath.slice(resultsPath.indexOf(':') + 1);;
     }
 
-    // Construct overall ResultFramework config and individual connector's config.
+    // Construct overall DataCollectionFramework config and individual connector's config.
     coreConfig = {
-      tests: {
-        connector: testsConnector,
-        path: testsPath,
+      sources: {
+        connector: sourcesConnector,
+        path: sourcesPath,
       },
       results: {
         connector: resultsConnector,
@@ -174,8 +174,8 @@ async function begin() {
     console.log(JSON.stringify(coreConfig, null, 2));
   }
 
-  // Create ResultFramework instance.
-  let core = new ResultFramework(coreConfig);
+  // Create DataCollectionFramework instance.
+  let core = new DataCollectionFramework(coreConfig);
 
   let options = {
     filters: filters,
@@ -188,7 +188,7 @@ async function begin() {
     debug: debug,
   };
 
-  switch(action) {
+  switch (action) {
     case 'run':
       await core.run(options);
       break;

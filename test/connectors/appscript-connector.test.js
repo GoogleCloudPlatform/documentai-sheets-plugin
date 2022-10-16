@@ -20,13 +20,13 @@ const AppScriptConnector = require('../../src/connectors/appscript-connector');
 const assert = require('../../src/utils/assert');
 const setObject = require('../../src/utils/set-object');
 const Status = require('../../src/common/status');
-const {initFakeSheet, fakeSheetData} = require('./appscript-test-utils');
+const { initFakeSheet, fakeSheetData } = require('./appscript-test-utils');
 
 let fakeSheets = {
   'EnvVars': initFakeSheet(fakeSheetData.fakeEnvVarsSheetData),
   'System': initFakeSheet(fakeSheetData.fakeSystemSheetData),
   'Locations': initFakeSheet(fakeSheetData.fakeLocationsSheetData),
-  'Tests-1': initFakeSheet(fakeSheetData.fakeTestsSheetData),
+  'Sources-1': initFakeSheet(fakeSheetData.fakeSourcesSheetData),
   'Results-1': initFakeSheet(fakeSheetData.fakeResultsSheetData),
 };
 
@@ -39,7 +39,7 @@ global.SpreadsheetApp = {
   }),
   newDataValidation: () => ({
     requireValueInRange: () => ({
-      build: () => {},
+      build: () => { },
     })
   }),
   newConditionalFormatRule: () => ({
@@ -59,17 +59,17 @@ global.SpreadsheetApp = {
 };
 
 let connectorConfig = {
-  defaultTestsTab: 'Tests-1',
+  defaultSourcesTab: 'Sources-1',
   defaultResultsTab: 'Results-1',
   tabs: [{
-    tabName: 'Tests-1',
+    tabName: 'Sources-1',
     tabRole: 'tests',
     dataAxis: 'row',
     propertyLookup: 2, // Starts at 1
     skipColumns: 0,
     skipRows: 3,
   }, {
-    tabName: 'Tests-2',
+    tabName: 'Sources-2',
     tabRole: 'tests',
     dataAxis: 'row',
     propertyLookup: 2, // Starts at 1
@@ -112,14 +112,14 @@ let connectorConfig = {
     skipColumns: 0,
   }],
   validationsMaps: [{
-    targetTab: 'Tests-1',
+    targetTab: 'Sources-1',
     targetProperty: 'webpagetest.settings.location',
     validationTab: 'locationsTab',
     validationProperty: 'name',
   }],
 };
 
-let fakeTests = [
+let fakeSources = [
   {
     selected: true,
     url: 'google.com',
@@ -244,71 +244,71 @@ describe('AppScriptConnector EnvVars tab', () => {
   });
 });
 
-describe('AppScriptConnector Tests tab', () => {
+describe('AppScriptConnector Sources tab', () => {
   beforeEach(() => {
     // Overrides properties for testing.
-    fakeSheets['Tests-1'] = initFakeSheet(fakeSheetData.fakeTestsSheetData);
-    fakeSheets['Tests-2'] = initFakeSheet(fakeSheetData.fakeTestsSheetData);
+    fakeSheets['Sources-1'] = initFakeSheet(fakeSheetData.fakeSourcesSheetData);
+    fakeSheets['Sources-2'] = initFakeSheet(fakeSheetData.fakeSourcesSheetData);
     connector = new AppScriptConnector(connectorConfig, {} /* apiHandler */);
   });
 
-  it('returns all tests from the Tests sheet', async () => {
-    let tests = connector.getTestList();
-    expect(tests).toEqual(fakeTests);
+  it('returns all sources from the Sources sheet', async () => {
+    let sources = connector.getSourceLIst();
+    expect(sources).toEqual(fakeSources);
   });
 
-  it('returns all tests from a specific sheet', async () => {
-    let tests = connector.getTestList({tabId: 'Tests-2'});
-    expect(tests).toEqual(fakeTests);
+  it('returns all sources from a specific sheet', async () => {
+    let sources = connector.getSourceLIst({ tabId: 'Sources-2' });
+    expect(sources).toEqual(fakeSources);
   });
 
-  it('returns a selection of tests from the Tests sheet with filters',
-      async () => {
+  it('returns a selection of sources from the Sources sheet with filters',
+    async () => {
 
-    // Filtering test.selected = true
-    let tests = connector.getTestList({
-      filters: ['selected'],
+      // Filtering test.selected = true
+      let sources = connector.getSourceLIst({
+        filters: ['selected'],
+      });
+      expect(sources).toEqual([
+        fakeSources[0],
+        fakeSources[2],
+      ]);
+
+      // Filtering test.recurring.frequency
+      sources = connector.getSourceLIst({
+        filters: ['recurring.frequency'],
+      });
+      expect(sources).toEqual([
+        fakeSources[0],
+        fakeSources[2],
+      ]);
+
+      // Filtering test.selected = true
+      sources = connector.getSourceLIst({
+        filters: ['webpagetest.settings.connection==="4G"'],
+      });
+      expect(sources).toEqual([
+        fakeSources[0],
+      ]);
     });
-    expect(tests).toEqual([
-      fakeTests[0],
-      fakeTests[2],
-    ]);
 
-    // Filtering test.recurring.frequency
-    tests = connector.getTestList({
-      filters: ['recurring.frequency'],
-    });
-    expect(tests).toEqual([
-      fakeTests[0],
-      fakeTests[2],
-    ]);
+  it('updates sources to the Sources sheet', async () => {
+    let sources = connector.getSourceLIst();
+    sources[0].label = 'Updated Label';
 
-    // Filtering test.selected = true
-    tests = connector.getTestList({
-      filters: ['webpagetest.settings.connection==="4G"'],
-    });
-    expect(tests).toEqual([
-      fakeTests[0],
-    ]);
+    connector.updateSourceList(sources);
+    let updatedSources = connector.getSourceLIst();
+
+    expect(updatedSources).toEqual(sources);
   });
 
-  it('updates tests to the Tests sheet', async () => {
-    let tests = connector.getTestList();
-    tests[0].label = 'Updated Label';
-
-    connector.updateTestList(tests);
-    let updatedTests = connector.getTestList();
-
-    expect(updatedTests).toEqual(tests);
-  });
-
-  it('filters tests based on rowIndex', async () => {
-    let tests = connector.getTestList({
+  it('filters sources based on rowIndex', async () => {
+    let sources = connector.getSourceLIst({
       filters: ['appscript.rowIndex===6']
     });
 
-    expect(tests).toEqual([
-      fakeTests[2],
+    expect(sources).toEqual([
+      fakeSources[2],
     ]);
   });
 });
@@ -325,16 +325,16 @@ describe('AppScriptConnector Results tab', () => {
   });
 
   it('returns a selection of results from the Results sheet with filters',
-      async () => {
-    let results, expecteResults;
+    async () => {
+      let results, expecteResults;
 
-    results = connector.getResultList({
-      filters: ['selected'],
+      results = connector.getResultList({
+        filters: ['selected'],
+      });
+      expect(results).toEqual([
+        fakeResults[0],
+      ]);
     });
-    expect(results).toEqual([
-      fakeResults[0],
-    ]);
-  });
 
   it('appends a new set of results to an empty Results sheet', async () => {
     let resultsData = [
@@ -416,151 +416,151 @@ describe('AppScriptConnector Results tab', () => {
   });
 
   it('spreads array metrics into multiple rows and maintain other metrics',
-      async () => {
-    let resultsData = [
-      ['', '', '', '', '', '', ''],
-      ['selected', 'id', 'type', 'status', 'url',
+    async () => {
+      let resultsData = [
+        ['', '', '', '', '', '', ''],
+        ['selected', 'id', 'type', 'status', 'url',
           'cruxbigquery.metrics.SpeedIndex', 'psi.metrics.SpeedIndex'],
-      ['', 'ID', 'Type', 'Status', 'URL', 'CrUX SpeedIndex', 'PSI SpeedIndex'],
-    ];
-    fakeSheets['Results-1'] = initFakeSheet(resultsData);
+        ['', 'ID', 'Type', 'Status', 'URL', 'CrUX SpeedIndex', 'PSI SpeedIndex'],
+      ];
+      fakeSheets['Results-1'] = initFakeSheet(resultsData);
 
-    let results = [{
-      selected: true,
-      id: 'id-5678',
-      type: 'recurring',
-      url: 'web.dev',
-      status: Status.RETRIEVED,
-      cruxbigquery: {
-        metrics: [{
-          SpeedIndex: 500,
-        }, {
-          SpeedIndex: 600,
-        }, {
-          SpeedIndex: 700,
-        }, {
-          SpeedIndex: 800,
-        }],
-      },
-      psi: {
-        metrics: {
-          SpeedIndex: 999,
+      let results = [{
+        selected: true,
+        id: 'id-5678',
+        type: 'recurring',
+        url: 'web.dev',
+        status: Status.RETRIEVED,
+        cruxbigquery: {
+          metrics: [{
+            SpeedIndex: 500,
+          }, {
+            SpeedIndex: 600,
+          }, {
+            SpeedIndex: 700,
+          }, {
+            SpeedIndex: 800,
+          }],
         },
-      }
-    }];
+        psi: {
+          metrics: {
+            SpeedIndex: 999,
+          },
+        }
+      }];
 
-    // Append results and spread cruxbigquery.metrics into multiple rows if it's
-    // an array.
-    connector.appendResultList(results, {
-      appscript: {
-        spreadArrayProperty: 'cruxbigquery.metrics',
-      },
+      // Append results and spread cruxbigquery.metrics into multiple rows if it's
+      // an array.
+      connector.appendResultList(results, {
+        appscript: {
+          spreadArrayProperty: 'cruxbigquery.metrics',
+        },
+      });
+
+      let actualResults = connector.getResultList();
+      expect(actualResults.length).toEqual(4);
+
+      let duplicateResults = actualResults.filter(result => {
+        return result.status === Status.DUPLICATE;
+      });
+      expect(duplicateResults.length).toEqual(3);
+
+      let metricList = actualResults.map(result => result.cruxbigquery.metrics);
+      expect(metricList[0].SpeedIndex).toEqual(500);
+      expect(metricList[1].SpeedIndex).toEqual(600);
+      expect(metricList[2].SpeedIndex).toEqual(700);
+      expect(metricList[3].SpeedIndex).toEqual(800);
+
+      let psiMetricList = actualResults.map(result => result.psi.metrics);
+      expect(psiMetricList[0].SpeedIndex).toEqual(999);
+      expect(psiMetricList[1].SpeedIndex).toEqual(999);
+      expect(psiMetricList[2].SpeedIndex).toEqual(999);
+      expect(psiMetricList[3].SpeedIndex).toEqual(999);
     });
-
-    let actualResults = connector.getResultList();
-    expect(actualResults.length).toEqual(4);
-
-    let duplicateResults = actualResults.filter(result => {
-      return result.status === Status.DUPLICATE;
-    });
-    expect(duplicateResults.length).toEqual(3);
-
-    let metricList = actualResults.map(result => result.cruxbigquery.metrics);
-    expect(metricList[0].SpeedIndex).toEqual(500);
-    expect(metricList[1].SpeedIndex).toEqual(600);
-    expect(metricList[2].SpeedIndex).toEqual(700);
-    expect(metricList[3].SpeedIndex).toEqual(800);
-
-    let psiMetricList = actualResults.map(result => result.psi.metrics);
-    expect(psiMetricList[0].SpeedIndex).toEqual(999);
-    expect(psiMetricList[1].SpeedIndex).toEqual(999);
-    expect(psiMetricList[2].SpeedIndex).toEqual(999);
-    expect(psiMetricList[3].SpeedIndex).toEqual(999);
-  });
 
   it('spreads array metrics into multiple rows even if no matched key in ' +
-      'the target sheet', async () => {
-    let resultsData = [
-      ['', '', '', '', '', ''],
-      ['selected', 'id', 'type', 'status', 'url', 'cruxbigquery.metrics.SpeedIndex', 'psi.metrics.SpeedIndex'],
-      ['', 'ID', 'Type', 'Status', 'URL', 'CrUX SpeedIndex', 'PSI SpeedIndex'],
-    ];
-    fakeSheets['Results-1'] = initFakeSheet(resultsData);
+    'the target sheet', async () => {
+      let resultsData = [
+        ['', '', '', '', '', ''],
+        ['selected', 'id', 'type', 'status', 'url', 'cruxbigquery.metrics.SpeedIndex', 'psi.metrics.SpeedIndex'],
+        ['', 'ID', 'Type', 'Status', 'URL', 'CrUX SpeedIndex', 'PSI SpeedIndex'],
+      ];
+      fakeSheets['Results-1'] = initFakeSheet(resultsData);
 
-    let results = [{
-      selected: true,
-      id: 'id-5678',
-      type: 'recurring',
-      url: 'web.dev',
-      status: Status.RETRIEVED,
-      cruxbigquery: {
-        metrics: [{
-          SpeedIndex: 500,
-        }, {
-          SpeedIndex: 600,
-        }, {
-          SpeedIndex: 700,
-        }, {
-          SpeedIndex: 800,
-        }],
-      },
-    }];
+      let results = [{
+        selected: true,
+        id: 'id-5678',
+        type: 'recurring',
+        url: 'web.dev',
+        status: Status.RETRIEVED,
+        cruxbigquery: {
+          metrics: [{
+            SpeedIndex: 500,
+          }, {
+            SpeedIndex: 600,
+          }, {
+            SpeedIndex: 700,
+          }, {
+            SpeedIndex: 800,
+          }],
+        },
+      }];
 
-    // Append results and spread cruxbigquery.metrics into multiple rows if it's
-    // an array.
-    connector.appendResultList(results, {
-      appscript: {
-        spreadArrayProperty: 'cruxbigquery.metrics',
-      },
+      // Append results and spread cruxbigquery.metrics into multiple rows if it's
+      // an array.
+      connector.appendResultList(results, {
+        appscript: {
+          spreadArrayProperty: 'cruxbigquery.metrics',
+        },
+      });
+
+      let actualResults = connector.getResultList();
+      expect(actualResults.length).toEqual(4);
+
+      let duplicateResults = actualResults.filter(result => {
+        return result.status === Status.DUPLICATE;
+      });
+      expect(duplicateResults.length).toEqual(3);
     });
-
-    let actualResults = connector.getResultList();
-    expect(actualResults.length).toEqual(4);
-
-    let duplicateResults = actualResults.filter(result => {
-      return result.status === Status.DUPLICATE;
-    });
-    expect(duplicateResults.length).toEqual(3);
-  });
 
   it('spreads array metrics into multiple rows even if no matched ' +
-      'spreadArrayProperty key', async () => {
-    let resultsData = [
-      ['', '', '', '', '', ''],
-      ['selected', 'id', 'type', 'status', 'url', 'psi.metrics.SpeedIndex'],
-      ['', 'ID', 'Type', 'Status', 'URL', 'PSI SpeedIndex'],
-    ];
-    fakeSheets['Results-1'] = initFakeSheet(resultsData);
+    'spreadArrayProperty key', async () => {
+      let resultsData = [
+        ['', '', '', '', '', ''],
+        ['selected', 'id', 'type', 'status', 'url', 'psi.metrics.SpeedIndex'],
+        ['', 'ID', 'Type', 'Status', 'URL', 'PSI SpeedIndex'],
+      ];
+      fakeSheets['Results-1'] = initFakeSheet(resultsData);
 
-    let results = [{
-      selected: true,
-      id: 'id-5678',
-      type: 'recurring',
-      url: 'web.dev',
-      status: Status.RETRIEVED,
-      psi: {
-        metrics: {
-          SpeedIndex: 500,
-        }
-      },
-    }];
+      let results = [{
+        selected: true,
+        id: 'id-5678',
+        type: 'recurring',
+        url: 'web.dev',
+        status: Status.RETRIEVED,
+        psi: {
+          metrics: {
+            SpeedIndex: 500,
+          }
+        },
+      }];
 
-    // Append results and spread cruxbigquery.metrics into multiple rows if it's
-    // an array.
-    connector.appendResultList(results, {
-      appscript: {
-        spreadArrayProperty: 'cruxbigquery.metrics',
-      },
+      // Append results and spread cruxbigquery.metrics into multiple rows if it's
+      // an array.
+      connector.appendResultList(results, {
+        appscript: {
+          spreadArrayProperty: 'cruxbigquery.metrics',
+        },
+      });
+
+      let actualResults = connector.getResultList();
+      expect(actualResults.length).toEqual(1);
+
+      let duplicateResults = actualResults.filter(result => {
+        return result.status === Status.DUPLICATE;
+      });
+      expect(duplicateResults.length).toEqual(0);
     });
-
-    let actualResults = connector.getResultList();
-    expect(actualResults.length).toEqual(1);
-
-    let duplicateResults = actualResults.filter(result => {
-      return result.status === Status.DUPLICATE;
-    });
-    expect(duplicateResults.length).toEqual(0);
-  });
 });
 
 describe('AppScriptConnector System tab', () => {
@@ -597,12 +597,12 @@ describe('AppScriptConnector Locations tab', () => {
           'data': {
             'location-1': {
               labelShort: 'Location 1',
-              PendingTests: {Total: 10},
+              PendingSources: { Total: 10 },
               Browsers: 'chrome',
             },
             'location-2': {
               labelShort: 'Location 2',
-              PendingTests: {Total: 20},
+              PendingSources: { Total: 20 },
               Browsers: 'firefox',
             }
           }
@@ -617,13 +617,13 @@ describe('AppScriptConnector Locations tab', () => {
       {
         id: 'location-1',
         name: 'Location 1 (location-1)',
-        pendingTests: 10,
+        pendingSources: 10,
         browsers: 'chrome',
       },
       {
         id: 'location-2',
         name: 'Location 2 (location-2)',
-        pendingTests: 20,
+        pendingSources: 20,
         browsers: 'firefox',
       },
     ]);
@@ -635,15 +635,15 @@ describe('AppScriptConnector additional functions', () => {
     // Overrides properties for testing.
     fakeSheets['EnvVars'] = initFakeSheet(fakeSheetData.fakeEnvVarsSheetData);
     fakeSheets['System'] = initFakeSheet(fakeSheetData.fakeSystemSheetData);
-    fakeSheets['Tests-1'] = initFakeSheet(fakeSheetData.fakeTestsSheetData);
+    fakeSheets['Sources-1'] = initFakeSheet(fakeSheetData.fakeSourcesSheetData);
     fakeSheets['Results-1'] = initFakeSheet(fakeSheetData.fakeResultsSheetData);
     connector = new AppScriptConnector(connectorConfig, {} /* apiHandler */);
   });
 
   it('returns property lookup values for sheet with DataAxis.ROW', async () => {
     let propertyLookup;
-    propertyLookup = connector.getPropertyLookup('Tests-1');
-    expect(propertyLookup).toEqual(fakeSheetData.fakeTestsSheetData[1]);
+    propertyLookup = connector.getPropertyLookup('Sources-1');
+    expect(propertyLookup).toEqual(fakeSheetData.fakeSourcesSheetData[1]);
 
     propertyLookup = connector.getPropertyLookup('Results-1');
     expect(propertyLookup).toEqual(fakeSheetData.fakeResultsSheetData[1]);
@@ -653,12 +653,12 @@ describe('AppScriptConnector additional functions', () => {
     let propertyLookup;
     propertyLookup = connector.getPropertyLookup('envVarsTab');
     expect(propertyLookup).toEqual([
-        'webPageTestApiKey', 'psiApiKey', 'gcpProjectId']);
+      'webPageTestApiKey', 'psiApiKey', 'gcpProjectId']);
 
     propertyLookup = connector.getPropertyLookup('systemTab');
     expect(propertyLookup).toEqual([
-        'RETRIEVE_TRIGGER_ID', 'RECURRING_TRIGGER_ID', 'ONEDIT_TRIGGER_ID',
-        'LAST_INIT_TIMESTAMP']);
+      'RETRIEVE_TRIGGER_ID', 'RECURRING_TRIGGER_ID', 'ONEDIT_TRIGGER_ID',
+      'LAST_INIT_TIMESTAMP']);
   });
 
   it('returns property index with given property key', async () => {
@@ -673,7 +673,7 @@ describe('AppScriptConnector additional functions', () => {
   it('returns specific tabIds with given a tab role', async () => {
     let index, tabIds;
     tabIds = connector.getTabIds('tests');
-    expect(tabIds).toEqual(['Tests-1', 'Tests-2']);
+    expect(tabIds).toEqual(['Sources-1', 'Sources-2']);
 
     tabIds = connector.getTabIds('results');
     expect(tabIds).toEqual(['Results-1']);
@@ -685,7 +685,7 @@ describe('AppScriptConnector additional functions', () => {
   });
 
   it('throws error if not able to find a specific sheet', () => {
-    expect(() => {connector.getSheet('NonExistingTab')}).toThrow(Error);
+    expect(() => { connector.getSheet('NonExistingTab') }).toThrow(Error);
   });
 
   it('returns the last row with values', () => {

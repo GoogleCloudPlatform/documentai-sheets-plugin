@@ -32,14 +32,14 @@ class JsonDataConnector extends Connector {
     this.results = null;
   }
 
-  getTestsJson() {
+  getSourcesJson() {
     if (this.tests) return this.tests;
-    assert(this.testsPath, 'testsPath is not defined.');
-    assert(!Array.isArray(this.testsPath), 'testsPath has to be either string or object')
+    assert(this.sourcesPath, 'sourcesPath is not defined.');
+    assert(!Array.isArray(this.sourcesPath), 'sourcesPath has to be either string or object')
 
-    if (typeof this.testsPath === 'object') return this.testsPath;
+    if (typeof this.sourcesPath === 'object') return this.sourcesPath;
 
-    return JSON.parse(this.testsPath);
+    return JSON.parse(this.sourcesPath);
   }
 
   getResultsJson() {
@@ -51,17 +51,17 @@ class JsonDataConnector extends Connector {
   }
 
   getEnvVars() {
-    let tests = this.getTestsJson();
+    let sources = this.getSourcesJson();
     let envVars = (tests || {}).envVars;
     return envVars;
   }
 
-  getTestList(options) {
-    let tests = this.getTestsJson();
+  getSourceLIst(options) {
+    let sources = this.getSourcesJson();
 
     // Manually add index to all test objects.
     let index = 0;
-    tests.tests.forEach(test => {
+    tests.tests.forEach(source => {
       test.json = {
         index: index++,
       }
@@ -70,30 +70,30 @@ class JsonDataConnector extends Connector {
     return tests.tests;
   }
 
-  updateTestList(newTests) {
-    let filepath = path.resolve(`${this.testsPath}`);
-    let tests = this.getTestList();
+  updateSourceList(newSources) {
+    let filepath = path.resolve(`${this.sourcesPath}`);
+    let sources = this.getSourceLIst();
 
-    let rowIndexToTests = {};
-    newTests.forEach(newTest => {
-      rowIndexToTests[newTest.json.index] = newTest;
+    let rowIndexToSources = {};
+    newSources.forEach(newTest => {
+      rowIndexToSources[newTest.json.index] = newTest;
     });
 
     let index = 0;
-    let testsToUpdate = [];
-    tests.forEach(test => {
-      test = rowIndexToTests[index] || test;
+    let sourcesToUpdate = [];
+    tests.forEach(source => {
+      test = rowIndexToSources[index] || test;
       delete test.json;
-      testsToUpdate.push(test);
+      sourcesToUpdate.push(test);
       index++;
     })
 
     outputJson = {
       envVars: this.getEnvVars(),
-      tests: testsToUpdate,
+      sources: sourcesToUpdate,
     };
 
-    // Reset the tests json cache.
+    // Reset the sources json cache.
     this.tests = null;
     return outputJson;
   }

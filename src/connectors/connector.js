@@ -19,17 +19,17 @@ class Connector {
     config = config || {};
     this.apiHandler = apiHandler;
     this.envVars = envVars;
-    this.testsPath = config.testsPath;
+    this.sourcesPath = config.sourcesPath;
     this.resultsPath = config.resultsPath;
     this.verbose = config.verbose;
     this.debug = config.debug;
   }
-  getEnvVars() {}
-  getTestList(options) {}
-  updateTestList(newTests, options) {}
-  getResultList(options) {}
-  appendResultList(newResults, options) {}
-  updateResultList(newResults, options) {}
+  getEnvVars() { }
+  getSourceLIst(options) { }
+  updateSourceList(newSources, options) { }
+  getResultList(options) { }
+  appendResultList(newResults, options) { }
+  updateResultList(newResults, options) { }
 }
 
 module.exports = Connector;

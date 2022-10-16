@@ -5,7 +5,7 @@
     "gcpKeyFilePath": "TEST_KEYFILENAME",
     "gcpProjectId": "TEST_PROJECT_ID"
   },
-  "tests": [
+  "sources": [
     {
       "selected": true,
       "label": "Think With Google",

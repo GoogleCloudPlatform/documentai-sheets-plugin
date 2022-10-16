@@ -5,7 +5,7 @@
       "psi": "TEST_API"
     }
   },
-  "tests": [
+  "sources": [
     {
       "selected": true,
       "label": "Think With Google",

@@ -22,7 +22,7 @@ class Gatherer {
    * @param  {object} apiHandler API handler instance.
    * @param  {object} options Options object.
    */
-  constructor(config, envVars, apiHandler, options) {}
+  constructor(config, envVars, apiHandler, options) { }
 
   /**
    * Run a single Test.
@@ -35,8 +35,8 @@ class Gatherer {
   }
 
   /**
-   * Run a list of Tests in batch.
-   * @param  {Array<object>} tests List of Test objects.
+   * Run a list of Sources in batch.
+   * @param  {Array<object>} sources List of Test objects.
    * @param  {object} options Options object.
    * @return {object} Response object, including status proeprty.
    */

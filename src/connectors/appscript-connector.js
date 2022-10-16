@@ -22,7 +22,7 @@ const Status = require('../common/status');
 const setObject = require('../utils/set-object');
 const transpose = require('../utils/transpose');
 const Connector = require('./connector');
-const {AppScriptHelper, SystemVars, TabRole} = require('../helpers/appscript-helper');
+const { AppScriptHelper, SystemVars, TabRole } = require('../helpers/appscript-helper');
 
 const DataAxis = {
   ROW: 'row',
@@ -46,13 +46,13 @@ class AppScriptConnector extends Connector {
   constructor(config, apiHandler) {
     super();
     assert(config.tabs, 'tabs is missing in config.');
-    assert(config.defaultTestsTab, 'defaultTestsTab is missing in config.');
+    assert(config.defaultSourcesTab, 'defaultSourcesTab is missing in config.');
     assert(config.defaultResultsTab, 'defaultResultsTab is missing in config.');
 
     this.apiHandler = apiHandler;
     this.locationApiEndpoint = 'http://www.webpagetest.org/getLocations.php?f=json&k=A';
     this.activeSpreadsheet = SpreadsheetApp.getActive();
-    this.defaultTestsTab = config.defaultTestsTab;
+    this.defaultSourcesTab = config.defaultSourcesTab;
     this.defaultResultsTab = config.defaultResultsTab;
 
     // Caching for preventing querying the same data repeatedly.
@@ -62,11 +62,11 @@ class AppScriptConnector extends Connector {
     this.tabConfigs = {};
     config.tabs.forEach(tabConfig => {
       assert(tabConfig.tabName,
-          `tabName is missing in tabConfig: ${tabConfig}`);
+        `tabName is missing in tabConfig: ${tabConfig}`);
       assert(tabConfig.tabRole,
-          `tabRole is missing in tabConfig: ${tabConfig}`);
+        `tabRole is missing in tabConfig: ${tabConfig}`);
 
-      switch(tabConfig.tabRole) {
+      switch (tabConfig.tabRole) {
         case TabRole.SYSTEM:
           this.tabConfigs.systemTab = tabConfig;
           break;
@@ -100,15 +100,15 @@ class AppScriptConnector extends Connector {
       'webpagetest.metrics.lighthouse.SpeedIndex': [5800, 4300],
       'webpagetest.metrics.lighthouse.FirstContentfulPaint': [4000, 2000],
       'webpagetest.metrics.lighthouse.FirstMeaningfulPaint': [4000, 2000],
-      'webpagetest.metrics.lighthouse.LargestContentfulPaint': [4000,2500],
-      'webpagetest.metrics.lighthouse.CumulativeLayoutShift': [0.25,0.1],
+      'webpagetest.metrics.lighthouse.LargestContentfulPaint': [4000, 2500],
+      'webpagetest.metrics.lighthouse.CumulativeLayoutShift': [0.25, 0.1],
       'webpagetest.metrics.lighthouse.TimeToInteractive': [7300, 5200],
-      'webpagetest.metrics.lighthouse.TotalBlockingTime': [600,300],
+      'webpagetest.metrics.lighthouse.TotalBlockingTime': [600, 300],
       'webpagetest.metrics.FirstContentfulPaint': [4000, 2000],
       'webpagetest.metrics.FirstMeaningfulPaint': [4000, 2000],
-      'webpagetest.metrics.LargestContentfulPaint': [4000,2500],
-      'webpagetest.metrics.CumulativeLayoutShift': [0.25,0.1],
-      'webpagetest.metrics.lighthouse.TotalBlockingTime': [600,300],
+      'webpagetest.metrics.LargestContentfulPaint': [4000, 2500],
+      'webpagetest.metrics.CumulativeLayoutShift': [0.25, 0.1],
+      'webpagetest.metrics.lighthouse.TotalBlockingTime': [600, 300],
       'webpagetest.metrics.DOMContentLoaded': [7000, 2500],
       'webpagetest.metrics.TimeToInteractive': [7300, 5200],
       'webpagetest.metrics.SpeedIndex': [5800, 4300],
@@ -122,35 +122,35 @@ class AppScriptConnector extends Connector {
       'psi.metrics.lighthouse.SpeedIndex': [5800, 4300],
       'psi.metrics.lighthouse.FirstContentfulPaint': [4000, 2000],
       'psi.metrics.lighthouse.FirstMeaningfulPaint': [4000, 2000],
-      'psi.metrics.lighthouse.LargestContentfulPaint': [4000,2500],
-      'psi.metrics.lighthouse.CumulativeLayoutShift': [0.25,0.1],
+      'psi.metrics.lighthouse.LargestContentfulPaint': [4000, 2500],
+      'psi.metrics.lighthouse.CumulativeLayoutShift': [0.25, 0.1],
       'psi.metrics.lighthouse.TimeToInteractive': [7300, 5200],
-      'psi.metrics.lighthouse.TotalBlockingTime': [600,300],
+      'psi.metrics.lighthouse.TotalBlockingTime': [600, 300],
       'psi.metrics.crux.FirstContentfulPaint.percentile': [3000, 1000],
-      'psi.metrics.crux.LargestContentfulPaint.percentile': [4000,2500],
-      'psi.metrics.crux.FirstInputDelay.percentile': [300,100],
-      'psi.metrics.crux.CumulativeLayoutShift.percentile':  [25,10],
+      'psi.metrics.crux.LargestContentfulPaint.percentile': [4000, 2500],
+      'psi.metrics.crux.FirstInputDelay.percentile': [300, 100],
+      'psi.metrics.crux.CumulativeLayoutShift.percentile': [25, 10],
 
-      'cruxbigquery.metrics.p75_ttfb': [1500,500],
+      'cruxbigquery.metrics.p75_ttfb': [1500, 500],
       'cruxbigquery.metrics.p75_fp': [2500, 1500],
       'cruxbigquery.metrics.p75_fcp': [2500, 1500],
-      'cruxbigquery.metrics.p75_lcp': [4000,2500],
-      'cruxbigquery.metrics.p75_fid': [300,100],
-      'cruxbigquery.metrics.p75_cls': [0.25,0.1],
+      'cruxbigquery.metrics.p75_lcp': [4000, 2500],
+      'cruxbigquery.metrics.p75_fid': [300, 100],
+      'cruxbigquery.metrics.p75_cls': [0.25, 0.1],
       'cruxbigquery.metrics.p75_dcl': [3500, 1500],
       'cruxbigquery.metrics.p75_ol': [6500, 2500],
 
       'cruxapi.metrics.FirstContentfulPaint.p75': [3000, 1000],
-      'cruxapi.metrics.LargestContentfulPaint.p75': [4000,2500],
-      'cruxapi.metrics.CumulativeLayoutShift.p75': [0.25,0.1],
-      'cruxapi.metrics.FirstInputDelay.p75': [300,100]
+      'cruxapi.metrics.LargestContentfulPaint.p75': [4000, 2500],
+      'cruxapi.metrics.CumulativeLayoutShift.p75': [0.25, 0.1],
+      'cruxapi.metrics.FirstInputDelay.p75': [300, 100]
     };
 
     this.healthCheck();
   }
 
   /**
-   * init - Initializing the ResultFramework on Spreadsheets, including adding triggers,
+   * init - Initializing the DataCollectionFramework on Spreadsheets, including adding triggers,
    * get all locations from WebPageTest, init conditional formatting, and get
    * user timeozone.
    */
@@ -177,7 +177,7 @@ class AppScriptConnector extends Connector {
   }
 
   /**
-   * getList - The helper function for getting arbitrary items, like Tests,
+   * getList - The helper function for getting arbitrary items, like Sources,
    * Results, or Config items.
    * @param  {type} tabId The keys of tabConfigs. E.g. "envVarsTab"
    * @param  {type} options Options: appendRowIndex, verbose or debug.
@@ -206,7 +206,7 @@ class AppScriptConnector extends Connector {
         if (propertyLookup[j]) {
           if (typeof propertyLookup[j] !== 'string') {
             throw new Error(
-                `${tabId} Tab: Property lookup ${propertyLookup[j]} is not a string`);
+              `${tabId} Tab: Property lookup ${propertyLookup[j]} is not a string`);
           }
 
           setObject(newItem, propertyLookup[j], data[i][j]);
@@ -226,44 +226,44 @@ class AppScriptConnector extends Connector {
   }
 
   /**
-   * getTestList - Return the array of Tests, supporting Pattern filters.
+   * getSourceLIst - Return the array of Sources, supporting Pattern filters.
    * Checkout `src/utils/pattern-filter.js` for more details.
    * @param  {object} options Options including filters, verbose and debug.
    * @return {Array<object>} description
    */
-  getTestList(options) {
+  getSourceLIst(options) {
     options = options || {};
     options.appendRowIndex = true;
     let appscript = options.appscript || {};
 
-    // If tabId is not specified, use the default Tests tabId.
-    let tests = this.getList(appscript.testsTab || this.defaultTestsTab, options);
-    tests = patternFilter(tests, options.filters);
-    return tests;
+    // If tabId is not specified, use the default Sources tabId.
+    let sources = this.getList(appscript.sourcesTab || this.defaultSourcesTab, options);
+    sources = patternFilter(sources, options.filters);
+    return sources;
   }
 
   /**
-   * updateTestList - Update the array of new Tests to the original Tests,
-   * based on the RowIndex of each Test in the "Tests" Sheet.
-   * @param  {Array<object>} newTests The array of new Test objects.
+   * updateSourceList - Update the array of new Sources to the original Sources,
+   * based on the RowIndex of each Test in the "Sources" Sheet.
+   * @param  {Array<object>} newSources The array of new Test objects.
    * @param  {object} options Options: filters, verbose and debug.
    */
-  updateTestList(newTests, options) {
+  updateSourceList(newSources, options) {
     options = options || {};
     let appscript = options.appscript || {};
 
-    // If tabId is not specified, use the default Tests tabId.
-    this.updateList(appscript.testsTab || this.defaultTestsTab, newTests,
-        (test, rowIndex) => {
-      // test.appscript.rowIndex in each Test is added in getList().
-      return test.appscript.rowIndex;
-    } /* rowIndexFunc */);
+    // If tabId is not specified, use the default Sources tabId.
+    this.updateList(appscript.sourcesTab || this.defaultSourcesTab, newSources,
+      (test, rowIndex) => {
+        // test.appscript.rowIndex in each Test is added in getList().
+        return test.appscript.rowIndex;
+      } /* rowIndexFunc */);
   }
 
   /**
    * getRowRange - The helper function get the GoogleSheets Range object for the
    * entire row with given row index.
-   * @param  {string} tabId The keys of tabConfigs. E.g. "testsTab"
+   * @param  {string} tabId The keys of tabConfigs. E.g. "sourcesTab"
    * @param  {number} rowIndex The row index in a sheet. (starting from 1)
    * @return {object} GoogleSheets Range object
    */
@@ -276,7 +276,7 @@ class AppScriptConnector extends Connector {
   /**
    * getColumnRange - Return the GoogleSheets Range object for
    * the entire column with given propertyKey.
-   * @param  {string} tabId The keys of tabConfigs. E.g. "testsTab"
+   * @param  {string} tabId The keys of tabConfigs. E.g. "sourcesTab"
    * @param  {string} propertyKey The property key for the column. E.g. "webpagetest.metrics.CSS"
    * @return {object} GoogleSheets Range object
    */
@@ -285,7 +285,7 @@ class AppScriptConnector extends Connector {
     let sheet = this.getSheet(tabId);
     let columnIndex = this.getPropertyIndex(tabId, propertyKey);
     let numRows = includeSkipRows ?
-        sheet.getLastRow() : sheet.getLastRow() - tabConfig.skipRows;
+      sheet.getLastRow() : sheet.getLastRow() - tabConfig.skipRows;
     let rowStart = includeSkipRows ? 1 : tabConfig.skipRows + 1;
 
     assert(columnIndex, `Unable to get column index for property '${propertyKey}'`);
@@ -297,7 +297,7 @@ class AppScriptConnector extends Connector {
 
   /**
    * getLastRow - Return the last row with at least one value of a specific tab.
-   * @param  {string} tabId The keys of tabConfigs. E.g. "testsTab"
+   * @param  {string} tabId The keys of tabConfigs. E.g. "sourcesTab"
    * @return {number} Index of the last row with values.
    */
   getTabLastRow(tabId) {
@@ -310,7 +310,7 @@ class AppScriptConnector extends Connector {
     });
 
     let rowIndex = sheetValues.length;
-    while(!sheetValues[rowIndex - 1]) {
+    while (!sheetValues[rowIndex - 1]) {
       rowIndex--;
     }
     return rowIndex;
@@ -361,7 +361,7 @@ class AppScriptConnector extends Connector {
           // Break a result into multiple Duplicate rows, and keep the first row
           // as the original status.
           if (Array.isArray(spreadArray) && spreadArray.length > 0) {
-            for (let i = 0; i <spreadArray.length; i++) {
+            for (let i = 0; i < spreadArray.length; i++) {
               let newResult = JSON.parse(JSON.stringify(result));
               if (i > 0) newResult.status = Status.DUPLICATE;
               eval(`newResult.${appscript.spreadArrayProperty} = spreadArray[i]`);
@@ -409,7 +409,7 @@ class AppScriptConnector extends Connector {
   /**
    * getPropertyLookup - Return an array of property keys from the Row of
    * PropertyLookup.
-   * @param  {string} tabId The keys of tabConfigs. E.g. "testsTab"
+   * @param  {string} tabId The keys of tabConfigs. E.g. "sourcesTab"
    * @return {Array<string>} Array of property keys.
    */
   getPropertyLookup(tabId) {
@@ -424,14 +424,14 @@ class AppScriptConnector extends Connector {
 
     if (tabConfig.dataAxis === DataAxis.ROW) {
       let data = sheet.getRange(
-          tabConfig.propertyLookup, skipColumns + 1,
-          1, sheet.getLastColumn() - skipColumns).getValues();
+        tabConfig.propertyLookup, skipColumns + 1,
+        1, sheet.getLastColumn() - skipColumns).getValues();
       propertyLookup = data[0];
 
     } else {
       let data = sheet.getRange(
-          skipRows + 1, tabConfig.propertyLookup,
-          sheet.getLastRow() - skipRows, 1).getValues();
+        skipRows + 1, tabConfig.propertyLookup,
+        sheet.getLastRow() - skipRows, 1).getValues();
       propertyLookup = data.map(x => x[0]);
     }
 
@@ -443,7 +443,7 @@ class AppScriptConnector extends Connector {
    * getPropertyIndex - Return the index with a given property key. E.g.
    * getPropertyIndex('webpagetest.metrics.CSS') returns the column inex for
    * CSS metric column.
-   * @param  {string} tabId The keys of tabConfigs. E.g. "testsTab"
+   * @param  {string} tabId The keys of tabConfigs. E.g. "sourcesTab"
    * @param  {string} lookupKey Property key of the column to look up.
    * @return {number} Column index.
    */
@@ -468,7 +468,7 @@ class AppScriptConnector extends Connector {
     // Create recurring trigger.
     let triggerId;
     triggerId = AppScriptHelper.createTimeBasedTrigger(
-        'submitRecurringTests', 10 /* minutes */);
+      'submitRecurringSources', 10 /* minutes */);
     this.setSystemVar(SystemVars.RECURRING_TRIGGER_ID, triggerId);
   }
 
@@ -484,7 +484,7 @@ class AppScriptConnector extends Connector {
 
     // Get new locations from remote API.
     let response = this.apiHandler.fetch(this.locationApiEndpoint);
-    if(response.statusCode == 200) {
+    if (response.statusCode == 200) {
       let json = JSON.parse(response.body);
 
       let newLocations = [];
@@ -494,39 +494,41 @@ class AppScriptConnector extends Connector {
         let newLocation = {
           id: key,
           name: `${data.labelShort} (${key})`,
-          pendingTests: data.PendingTests.Total,
+          pendingSources: data.PendingSources.Total,
           browsers: data.Browsers,
         };
         newLocation.key = key;
-        pendingByLocation[newLocation.name] = newLocation.pendingTests;
+        pendingByLocation[newLocation.name] = newLocation.pendingSources;
         newLocations.push(newLocation);
       });
 
       // Add empty rows if the original location list was longer than the new one.
-      for (let i=newLocations.length; i<locations.length; i++) {
+      for (let i = newLocations.length; i < locations.length; i++) {
         newLocations.push({});
       }
       this.updateList('locationsTab', newLocations);
 
-      // Overrides pending tests to property 'webpagetest.pendingTests'.
-      let propertyKey = 'webpagetest.pendingTests';
-      let tests = this.getTestList({
+      // Overrides pending sources to property 'webpagetest.pendingSources'.
+      let propertyKey = 'webpagetest.pendingSources';
+      let sources = this.getSourceLIst({
         filters: ['url', 'webpagetest.settings.location'],
       });
-      tests.forEach(test => {
-        if (!test.url || !test.webpagetest || !test.webpagetest.settings ||
-            !test.webpagetest.settings.location) return;
-        test.webpagetest.pendingTests =
-            pendingByLocation[test.webpagetest.settings.location];
+      sources.forEach(source => {
+        if (!source.url ||
+          !source.webpagetest ||
+          !source.webpagetest.settings ||
+          !source.webpagetest.settings.location) return;
+        source.webpagetest.pendingSources =
+          pendingByLocation[source.webpagetest.settings.location];
       });
-      this.updateTestList(tests);
+      this.updateSourceList(sources);
     }
   }
 
   /**
-   * updateList - The helper function to update arbitrary items, like Tests,
+   * updateList - The helper function to update arbitrary items, like Sources,
    * Results, or Config items.
-   * @param  {string} tabId The keys of tabConfigs. E.g. "testsTab"
+   * @param  {string} tabId The keys of tabConfigs. E.g. "sourcesTab"
    * @param  {Array<object>} items Array of new items.
    * @param  {Function} rowIndexFunc The function that returns rowIndex for each item.
    */
@@ -542,7 +544,7 @@ class AppScriptConnector extends Connector {
       propertyLookup.forEach(lookup => {
         if (typeof lookup !== 'string') {
           throw new Error(
-              `${tabId} Tab: Property lookup ${lookup} is not a string`);
+            `${tabId} Tab: Property lookup ${lookup} is not a string`);
         }
         try {
           let value = lookup ? eval(`item.${lookup}`) : '';
@@ -560,9 +562,9 @@ class AppScriptConnector extends Connector {
   }
 
   /**
-   * appendList - The helper function to append arbitrary items, like Tests,
+   * appendList - The helper function to append arbitrary items, like Sources,
    * Results, or Config items.
-   * @param  {string} tabId The keys of tabConfigs. E.g. "testsTab"
+   * @param  {string} tabId The keys of tabConfigs. E.g. "sourcesTab"
    * @param  {Array<object>} items Array of new items.
    * @param  {Function} rowIndexFunc The function that returns rowIndex for each item.
    */
@@ -579,7 +581,7 @@ class AppScriptConnector extends Connector {
       propertyLookup.forEach(lookup => {
         if (typeof lookup !== 'string') {
           throw new Error(
-              `${tabId} Tab: Property lookup ${lookup} is not a string`);
+            `${tabId} Tab: Property lookup ${lookup} is not a string`);
         }
         try {
           let value = lookup ? eval(`item.${lookup}`) : '';
@@ -603,7 +605,7 @@ class AppScriptConnector extends Connector {
 
   /**
    * clearList - Clear the entire list of a specific tab.
-   * @param {string} tabId The keys of tabConfigs. E.g. "testsTab"
+   * @param {string} tabId The keys of tabConfigs. E.g. "sourcesTab"
    */
   clearList(tabId) {
     let tabConfig = this.tabConfigs[tabId];
@@ -627,11 +629,11 @@ class AppScriptConnector extends Connector {
   initValidations() {
     this.validationsMaps.forEach(mapping => {
       let targetRange = this.getColumnRange(
-          this.getTabId(mapping.targetTab), mapping.targetProperty);
+        this.getTabId(mapping.targetTab), mapping.targetProperty);
       let validationRange = this.getColumnRange(
-          this.getTabId(mapping.validationTab), mapping.validationProperty);
+        this.getTabId(mapping.validationTab), mapping.validationProperty);
       let rule = SpreadsheetApp.newDataValidation().requireValueInRange(
-          validationRange).build();
+        validationRange).build();
       targetRange.setDataValidation(rule);
     });
   }
@@ -639,7 +641,7 @@ class AppScriptConnector extends Connector {
   /**
    * initConditionalFormat - Reset all conditional formatting defined in The
    * columnConditions.
-   * @param {string} tabId The keys of tabConfigs. E.g. "testsTab"
+   * @param {string} tabId The keys of tabConfigs. E.g. "sourcesTab"
    */
   initConditionalFormat(tabId) {
     let rules = [];
@@ -652,10 +654,10 @@ class AppScriptConnector extends Connector {
       let conditions = this.columnConditions[propertyKey];
       if (conditions && conditions.length > 0) {
         let range = sheet.getRange(tabConfig.skipRows + 1, columnIndex,
-            sheet.getMaxRows() - tabConfig.skipRows, 1);
+          sheet.getMaxRows() - tabConfig.skipRows, 1);
         let maxpoint = conditions[1],
           minpoint = conditions[0];
-        let midpoint = minpoint+(maxpoint-minpoint)/2;
+        let midpoint = minpoint + (maxpoint - minpoint) / 2;
         let maxcolor = '#68bb50', mincolor = '#e06666';
         if (maxpoint < minpoint) {
           maxpoint = conditions[0];
@@ -665,15 +667,15 @@ class AppScriptConnector extends Connector {
         }
 
         let rule =
-            SpreadsheetApp.newConditionalFormatRule()
-                .setGradientMaxpointWithValue(
-                    maxcolor, SpreadsheetApp.InterpolationType.NUMBER, maxpoint)
-                .setGradientMidpointWithValue(
-                    '#ffd666', SpreadsheetApp.InterpolationType.NUMBER, midpoint)
-                .setGradientMinpointWithValue(
-                    mincolor, SpreadsheetApp.InterpolationType.NUMBER, minpoint)
-                .setRanges([range])
-                .build();
+          SpreadsheetApp.newConditionalFormatRule()
+            .setGradientMaxpointWithValue(
+              maxcolor, SpreadsheetApp.InterpolationType.NUMBER, maxpoint)
+            .setGradientMidpointWithValue(
+              '#ffd666', SpreadsheetApp.InterpolationType.NUMBER, midpoint)
+            .setGradientMinpointWithValue(
+              mincolor, SpreadsheetApp.InterpolationType.NUMBER, minpoint)
+            .setRanges([range])
+            .build();
         rules.push(rule);
       }
       columnIndex++;
@@ -711,7 +713,7 @@ class AppScriptConnector extends Connector {
       this.setEnvVar('webPageTestApiKey', apiKey);
     } else {
       errorMessage = errorMessage || 'A WebPageTest API Key is required ' +
-          'for this tool to function.';
+        'for this tool to function.';
       Browser.msgBox(errorMessage);
     }
   }
@@ -772,7 +774,7 @@ class AppScriptConnector extends Connector {
     let object = (this.getList(tabId) || [])[0];
     try {
       return eval('object.' + key);
-    } catch(e) {
+    } catch (e) {
       return null;
     }
   }
@@ -794,7 +796,7 @@ class AppScriptConnector extends Connector {
     propertyLookup.forEach(property => {
       if (property === key) {
         let range = sheet.getRange(
-            tabConfig.skipRows + i, tabConfig.skipColumns + 1);
+          tabConfig.skipRows + i, tabConfig.skipColumns + 1);
         range.setValue(value);
       }
       i++;

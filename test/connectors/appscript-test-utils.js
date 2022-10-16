@@ -32,15 +32,15 @@ const fakeSheetData = {
     ['User\'s TimeZone', 'LAST_INIT_TIMESTAMP', ''],
   ],
   fakeLocationsSheetData: [
-    ['Name', 'ID', 'Pending Tests', 'Browsers'],
-    ['name', 'id', 'pendingTests', 'browsers'],
+    ['Name', 'ID', 'Pending Sources', 'Browsers'],
+    ['name', 'id', 'pendingSources', 'browsers'],
     ['Old location', 'location-old', '0', 'should-be-deleted'],
   ],
-  fakeTestsSheetData: [
+  fakeSourcesSheetData: [
     ['', '', '', '', '', '', '', ''],
     ['selected', 'url', 'label', 'recurring.frequency',
-        'recurring.nextTriggerTimestamp', 'gatherer', 'webpagetest.settings.connection',
-        'webpagetest.settings.location'],
+      'recurring.nextTriggerTimestamp', 'gatherer', 'webpagetest.settings.connection',
+      'webpagetest.settings.location'],
     ['', 'URL', 'Label', 'Frequency', 'Next Trigger Timestamp', 'Audit Platforms', 'WPT Connection', 'WPT Location'],
     [true, 'google.com', 'Google', 'Daily', null, 'webpagetest', '4G', 'TestLocation'],
     [false, 'examples.com', 'Example', null, null, 'webpagetest', '3G', 'TestLocation'],
@@ -58,7 +58,7 @@ const fakeSheetData = {
     ['selected', 'id', 'type', 'status', 'url', 'webpagetest.metrics.SpeedIndex'],
     ['', 'ID', 'Type', 'Status', 'URL', 'WPT SpeedIndex'],
   ],
-  fakePSITestsSheetData: [
+  fakePSISourcesSheetData: [
     ['', '', '', '', ''],
     ['selected', 'url', 'label', 'recurring.frequency', 'gatherer', 'psi.settings.network'],
     ['', 'URL', 'Label', 'Recurring Frequency', 'Audit Platforms', 'PSI network'],
@@ -111,7 +111,7 @@ const initFakeSheet = (fakeData) => {
         sheet.fakeData[row - 1][column - 1] = value;
       },
       setValues: (values) => {
-        while(sheet.fakeData.length < row - 1) {
+        while (sheet.fakeData.length < row - 1) {
           sheet.fakeData.push([]);
         }
         let i = row - 1;
@@ -123,7 +123,7 @@ const initFakeSheet = (fakeData) => {
           i++;
         })
       },
-      setDataValidation: () => {},
+      setDataValidation: () => { },
       getLastRow: () => {
         return sheet.fakeData.length;
       },
@@ -140,7 +140,7 @@ const initFakeSheet = (fakeData) => {
   };
   sheet.deleteRows = (row, numRows) => {
     let newFakeData = [];
-    for (let i=0; i<sheet.fakeData.length; i++) {
+    for (let i = 0; i < sheet.fakeData.length; i++) {
       if (i < row - 1 || i > row + numRows - 1) {
         newFakeData.push(sheet.fakeData[i]);
       }
@@ -160,7 +160,7 @@ const SpreadsheetApp = {
   }),
   newDataValidation: () => ({
     requireValueInRange: () => ({
-      build: () => {},
+      build: () => { },
     })
   }),
   newConditionalFormatRule: () => ({
@@ -186,7 +186,7 @@ const Session = {
 };
 
 const Utilities = {
-  computeDigest: () => {return [];},
+  computeDigest: () => { return []; },
   DigestAlgorithm: {},
   Charset: {},
   formatDate: () => '2020-01-01',
@@ -212,14 +212,14 @@ const ScriptApp = {
       })
     }),
   }),
-  deleteTrigger: (trigger) => {},
+  deleteTrigger: (trigger) => { },
 };
 
 const Logger = {
   log: jest.fn(),
 };
 
-const Browser =  {
+const Browser = {
   msgBox: jest.fn(),
 };
 
