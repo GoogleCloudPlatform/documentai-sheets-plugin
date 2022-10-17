@@ -22,7 +22,6 @@ require('../src/extensions/appscript-extension');
 
 // Helpers
 require('../src/helpers/appscript-helper');
-require('../src/helpers/gcp-handler');
 
 // Core
 const Core = require('../src/core');

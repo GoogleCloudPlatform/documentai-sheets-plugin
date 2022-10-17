@@ -104,6 +104,7 @@ describe('DataGathererFramework bundle for AppScript', () => {
       batchUpdateBuffer: 10,
       verbose: false,
       debug: false,
+      quiet: true,
     };
 
     core = new DataGathererFramework(coreConfig);
@@ -118,18 +119,7 @@ describe('DataGathererFramework bundle for AppScript', () => {
       return {
         statusCode: 200,
         body: JSON.stringify({
-          'data': {
-            'location-1': {
-              labelShort: 'Location 1',
-              pendingResults: { Total: 10 },
-              Browsers: 'chrome',
-            },
-            'location-2': {
-              labelShort: 'Location 2',
-              pendingResults: { Total: 20 },
-              Browsers: 'firefox',
-            }
-          }
+          'data': {}
         })
       }
     };
@@ -157,7 +147,9 @@ describe('DataGathererFramework bundle for AppScript', () => {
     fakeSheets['System'] = initFakeSheet(systemData);
 
     // Running sources and writing to Results-2 tab.
-    await core.run('Sources-1', 'Results-2', {
+    await core.run({
+      srcDatasetId: 'Sources-1',
+      destDatasetId: 'Results-2', // Results-2 tab.
       filters: ['selected'],
     });
     // Ensure there's no additional rows written to Results-1 tab.
@@ -167,7 +159,9 @@ describe('DataGathererFramework bundle for AppScript', () => {
     expect(resultsData2.length).toEqual(5);
 
     // Running sources and writing to Results-1 tab.
-    await core.run('Sources-1', 'Results-1', {
+    await core.run({
+      srcDatasetId: 'Sources-1',
+      destDatasetId: 'Results-1',
       filters: ['selected'],
     });
     // Ensure there are two additional rows in the Results tab.

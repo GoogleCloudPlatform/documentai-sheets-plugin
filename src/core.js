@@ -132,7 +132,7 @@ class DataGathererFramework {
    * @return {object} Connector instance.
    */
   getConnector(connectorConfig) {
-    ConnectorClass = require('./connectors/appscript-connector');
+    let ConnectorClass = require('./connectors/appscript-connector');
     return new ConnectorClass(connectorConfig, this.apiHandler);
   }
 
@@ -159,7 +159,7 @@ class DataGathererFramework {
 
         case 'fake':
           // Return dummy gatherer for testing purpose.
-          GathererClass = require('./gatherers/gatherer');
+          GathererClass = require('./gatherers/fake');
           break;
 
         default:
@@ -205,13 +205,20 @@ class DataGathererFramework {
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
    */
-  async run(srcDatasetId, destDatasetId, options) {
+  async run(options) {
     options = options || {};
     let extensions = options.extensions || Object.keys(this.extensions);
     let extResponse, overallErrors = [];
     let overrideResults = options.overrideResults || false;
-    let sources = await this.connector.getDataList(srcDatasetId, options);
     let envVars = this.connector.getEnvVars();
+    let sources;
+
+    if (options['srcDatasetId']) {
+      sources = await this.connector.getDataList(options['srcDatasetId'], options);
+    } else {
+      sources = [options['srcData']]
+    }
+
     options.envVars = envVars;
 
     // Before all runs.
@@ -219,7 +226,7 @@ class DataGathererFramework {
     overallErrors = overallErrors.concat(extResponse.errors);
 
     // Run gatherer.
-    let newResults = await this.execute(destDatasetId, sources, options);
+    let newResults = await this.execute(options['destDatasetId'], sources, options);
 
     // Collect all errors.
     newResults.forEach(result => {
@@ -253,7 +260,8 @@ class DataGathererFramework {
 
   /**
    * Run a single gatherer and return a detailed response from a gatherer.
-   * @param {object} test Test object to run.
+   * @param {string} destDatasetId
+   * @param {object} sources
    * @param {object} options
    *
    * Available options:
@@ -270,13 +278,15 @@ class DataGathererFramework {
     let resultsToUpdate = [], allNewResults = [];
     let extResponse;
 
+    assert(destDatasetId, 'destDatasetId is missing');
+
     // Before each run.
     sources.forEach(source => {
       extResponse = this.runExtensions(extensions, 'beforeRun', { source: source });
-      test.errors = extResponse.errors;
+      source.errors = extResponse.errors;
     });
 
-    // Run one test at a time and collect metrics from all gatherers.
+    // Run one source at a time and collect metrics from all gatherers.
     for (let i = 0; i < sources.length; i++) {
       let source = sources[i];
       let statuses = [];
@@ -365,7 +375,7 @@ class DataGathererFramework {
 
   /**
    * Run a single gatherer and return a detailed response from a gatherer.
-   * @param {object} test Test object to run.
+   * @param {object} source Source object to run.
    * @param {object} options
    *
    * Available options:
@@ -375,12 +385,12 @@ class DataGathererFramework {
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
    */
-  runGatherer(test, gathererName, options) {
+  runGatherer(source, gathererName, options) {
     options = options || {};
 
     try {
       let gatherer = this.getGatherer(gathererName);
-      let response = gatherer.run(test, options);
+      let response = gatherer.run(source, options);
       return response;
 
     } catch (error) {
@@ -395,59 +405,23 @@ class DataGathererFramework {
   }
 
   /**
-   * Run all gatherers and return a detailed response from a gatherer.
-   * @param  {type} sources      description
-   * @param  {type} gathererName description
-   * @param  {type} options    description
-   * @return {type}            description
-   */
-  async runGathererInBatch(tests, gathererName, options) {
-    let responseList = [];
-
-    try {
-      let gatherer = this.getGatherer(gathererName);
-
-      await gatherer.runBatchAsync(tests, options).then(res => {
-        // If there's no response, it means that the specific gatherer doesn't
-        // support runBatch. Hence it won't add any corresponding metrics to the
-        // Result objects.
-        if (!res) return [];
-        responseList = res;
-        return responseList;
-      });
-
-    } catch (error) {
-      responseList = tests.map(source => {
-        return {
-          status: Status.ERROR,
-          statusText: error.stack,
-          metadata: {},
-        };
-      });
-    }
-    return responseList;
-  }
-
-  /**
    * Return an empty Result object.
-   * @param {object} test Test object to run.
+   * @param {object} source Source object to run.
    * @param {object} options
    * @return {objet} An empty Result object.
    */
-  createNewResult(test, options) {
+  createNewResult(source, options) {
     let nowtime = Date.now();
 
     let newResult = {
-      id: nowtime + '-' + test.url || test.origin,
-      gatherer: test.gatherer,
+      id: nowtime,
+      gatherer: source.gatherer,
       status: Status.SUBMITTED,
-      label: test.label,
+      label: source.label,
       createdTimestamp: nowtime,
       modifiedTimestamp: nowtime,
-      errors: test.errors || [],
+      errors: source.errors || [],
     }
-    if (test.url) newResult.url = test.url;
-    if (test.origin) newResult.origin = test.origin;
 
     return newResult;
   }

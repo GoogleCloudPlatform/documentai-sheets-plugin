@@ -29,7 +29,6 @@ let generateFakeSources = function (amount, options) {
   while (count <= amount) {
     let source = {
       id: 'source-' + count,
-      url: 'url-' + count,
       label: 'label-' + count,
       gatherer: 'fake',
       fake: {
@@ -58,7 +57,6 @@ let generateFakeResults = function (amount, options) {
   while (count <= amount) {
     let result = {
       id: 'result-' + (count + offset),
-      url: 'url-' + count,
       label: 'label-' + count,
       status: Status.RETRIEVED,
       gatherer: 'fake',
@@ -189,10 +187,26 @@ describe('DataGathererFramework with fake modules', () => {
     expect(core).not.toBe(null);
   });
 
+  it('runs with a single source data and gets result.', async () => {
+    let fakeSources = generateFakeSources(1);
+    await core.run({
+      srcData: fakeSources[0],
+      destDatasetId: 'Results-1',
+    });
+
+    let expectedResults = generateFakeResults(1);
+    let actualResults = await core.getDataList('Results-1');
+    actualResults = cleanFakeResults(actualResults);
+    expect(actualResults).toEqual(expectedResults);
+  });
+
   it('runs through a list of sources and gets results.', async () => {
     let sources = generateFakeSources(10);
     core.connector.appendDataList('Sources-1', sources);
-    await core.run('Sources-1', 'Results-1');
+    await core.run({
+      srcDatasetId: 'Sources-1',
+      destDatasetId: 'Results-1',
+    });
 
     let expectedResults = generateFakeResults(10);
     let actualResults = await core.getDataList('Results-1');
@@ -202,7 +216,10 @@ describe('DataGathererFramework with fake modules', () => {
 
   it('retrieves non-complete results.', async () => {
     core.connector.sources = generateFakeSources(1);
-    await core.run('Sources-1', 'Results-1');
+    await core.run({
+      srcDatasetId: 'Sources-1',
+      destDatasetId: 'Results-1',
+    });
 
     cleanFakeResults(core.connector.results);
     let expectedResults = generateFakeResults(1, { status: Status.RETRIEVED });
@@ -213,7 +230,10 @@ describe('DataGathererFramework with fake modules', () => {
 
   it('retrieves all non-complete results.', async () => {
     core.connector.sources = generateFakeSources(10);
-    await core.run('Sources-1', 'Results-1');
+    await core.run({
+      srcDatasetId: 'Sources-1',
+      destDatasetId: 'Results-1',
+    });
 
     cleanFakeResults(core.connector.results);
     let expectedResults = generateFakeResults(10, { status: Status.RETRIEVED });
@@ -229,7 +249,11 @@ describe('DataGathererFramework with fake modules', () => {
       core.batchUpdateBuffer = 10;
 
       expectedResults = generateFakeResults(95);
-      await core.run('Sources-1', 'Results-1');
+      await core.run({
+        srcDatasetId: 'Sources-1',
+        destDatasetId: 'Results-1',
+      });
+
       cleanFakeResults(core.connector.results);
       expect(await core.getDataList('Results-1')).toEqual(expectedResults);
     });
@@ -241,14 +265,22 @@ describe('DataGathererFramework with fake modules', () => {
       core.batchUpdateBuffer = 5;
 
       expectedResults = generateFakeResults(22);
-      await core.run('Sources-1', 'Results-1');
+      await core.run({
+        srcDatasetId: 'Sources-1',
+        destDatasetId: 'Results-1',
+      });
+
       cleanFakeResults(core.connector.results);
       expect(await core.getDataList('Results-1')).toEqual(expectedResults);
     });
 
   it('runs through a list of sources and executes extensions.', async () => {
     core.connector.sources = generateFakeSources(10);
-    await core.run('Sources-1', 'Results-1');
+    await core.run({
+      srcDatasetId: 'Sources-1',
+      destDatasetId: 'Results-1',
+    });
+
     expect(core.extensions.fake.beforeAllRuns.mock.calls.length).toBe(1);
     expect(core.extensions.fake.afterAllRuns.mock.calls.length).toBe(1);
     expect(core.extensions.fake.beforeRun.mock.calls.length).toBe(10);
@@ -290,7 +322,10 @@ describe('DataGathererFramework with fake modules', () => {
         fake2: genGatherer(Status.SUBMITTED),
         fake3: genGatherer(Status.SUBMITTED),
       }
-      await core.run('Sources-1', 'Results-1');
+      await core.run({
+        srcDatasetId: 'Sources-1',
+        destDatasetId: 'Results-1',
+      });
 
       result = (await core.getDataList('Results-1'))[0];
       expect(result.fake1).toBeDefined();
@@ -306,7 +341,10 @@ describe('DataGathererFramework with fake modules', () => {
         fake2: genGatherer(Status.RETRIEVED),
         fake3: genGatherer(Status.SUBMITTED),
       }
-      await core.run('Sources-1', 'Results-1');
+      await core.run({
+        srcDatasetId: 'Sources-1',
+        destDatasetId: 'Results-1',
+      });
 
       result = (await core.getDataList('Results-1'))[1];
       expect(result.fake1).toBeDefined();
@@ -322,7 +360,10 @@ describe('DataGathererFramework with fake modules', () => {
         fake2: genGatherer(Status.RETRIEVED),
         fake3: genGatherer(Status.RETRIEVED),
       }
-      await core.run('Sources-1', 'Results-1');
+      await core.run({
+        srcDatasetId: 'Sources-1',
+        destDatasetId: 'Results-1',
+      });
 
       result = (await core.getDataList('Results-1'))[2];
       expect(result.fake1).toBeDefined();
@@ -338,7 +379,10 @@ describe('DataGathererFramework with fake modules', () => {
         fake2: genGatherer(Status.ERROR),
         fake3: genGatherer(Status.RETRIEVED),
       }
-      await core.run('Sources-1', 'Results-1');
+      await core.run({
+        srcDatasetId: 'Sources-1',
+        destDatasetId: 'Results-1',
+      });
 
       result = (await core.getDataList('Results-1'))[3];
       expect(result.fake1).toBeDefined();

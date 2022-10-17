@@ -25,22 +25,22 @@ class Gatherer {
   constructor(config, envVars, apiHandler, options) { }
 
   /**
-   * Run a single Test.
-   * @param  {object} test A Test object.
+   * Run a single source.
+   * @param  {object} source A source object.
    * @param  {object} options Options object.
    * @return {object} Response object, including status proeprty.
    */
-  run(test, options) {
+  run(source, options) {
     return null; // Return null by default.
   }
 
   /**
    * Run a list of Sources in batch.
-   * @param  {Array<object>} sources List of Test objects.
+   * @param  {Array<object>} sources List of source objects.
    * @param  {object} options Options object.
    * @return {object} Response object, including status proeprty.
    */
-  async runBatchAsync(tests, options) {
+  async runBatchAsync(sources, options) {
     return null; // Return null by default.
   }
 

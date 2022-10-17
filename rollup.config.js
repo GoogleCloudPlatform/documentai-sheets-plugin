@@ -18,6 +18,7 @@ export default [{
       ignore: [
         'sync-request',
         'fs-extra',
+        'fs',
         'path',
         './connectors/json-connector',
         './connectors/csv-connector',

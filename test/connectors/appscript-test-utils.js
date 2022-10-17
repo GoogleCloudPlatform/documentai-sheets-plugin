@@ -37,7 +37,7 @@ const fakeSheetData = {
   ],
   fakeSourcesSheetData: [
     ['', '', '', '', '', '', '', ''],
-    ['selected', 'url', 'label', 'recurring.frequency',
+    ['selected', 'fake.url', 'label', 'recurring.frequency',
       'recurring.nextTriggerTimestamp', 'gatherer', 'fake.settings.connection',
       'fake.settings.location'],
     ['', 'URL', 'Label', 'Frequency', 'Next Trigger Timestamp', 'Audit Platforms'],
@@ -47,30 +47,15 @@ const fakeSheetData = {
   ],
   fakeResultsSheetData: [
     ['', '', '', '', '', ''],
-    ['selected', 'id', 'type', 'status', 'url', 'fake.metrics.SpeedIndex'],
+    ['selected', 'id', 'type', 'status', 'fake.url', 'fake.metrics.SpeedIndex'],
     ['', 'ID', 'Type', 'Status', 'URL', 'WPT SpeedIndex'],
     [true, 'id-1234', 'single', 'Retrieved', 'google.com', 500],
     [false, 'id-5678', 'recurring', 'Retrieved', 'web.dev', 800],
   ],
   fakeEmptyResultsSheetData: [
     ['', '', '', '', '', ''],
-    ['selected', 'id', 'type', 'status', 'url', 'fake.metrics.SpeedIndex'],
+    ['selected', 'id', 'type', 'status', 'fake.url', 'fake.metrics.SpeedIndex'],
     ['', 'ID', 'Type', 'Status', 'URL', 'WPT SpeedIndex'],
-  ],
-  fakePSISourcesSheetData: [
-    ['', '', '', '', ''],
-    ['selected', 'url', 'label', 'recurring.frequency', 'gatherer', 'psi.settings.network'],
-    ['', 'URL', 'Label', 'Recurring Frequency', 'Audit Platforms', 'PSI network'],
-    [true, 'google.com', 'Google', 'Daily', 'psi', '4G'],
-    [false, 'examples.com', 'Example', null, 'psi', '3G'],
-    [true, 'web.dev', 'Web.Dev', 'Daily', 'psi', '3G'],
-  ],
-  fakePSIResultsSheetData: [
-    ['', '', '', '', '', ''],
-    ['selected', 'id', 'type', 'status', 'url', 'psi.metrics.FCP'],
-    ['', 'ID', 'Type', 'Status', 'URL', 'PSI FCP'],
-    [true, 'id-1234', 'single', 'Retrieved', 'google.com', 1000],
-    [false, 'id-5678', 'recurring', 'Retrieved', 'web.dev', 1200],
   ],
   fakeEmptyPSIResultsSheetData: [
     ['', '', '', '', '', ''],

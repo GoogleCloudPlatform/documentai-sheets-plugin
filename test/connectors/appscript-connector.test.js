@@ -64,7 +64,6 @@ let connectorConfig = {
 let fakeSources = [
   {
     selected: true,
-    url: 'google.com',
     label: 'Google',
     recurring: {
       frequency: 'Daily',
@@ -72,6 +71,7 @@ let fakeSources = [
     },
     gatherer: 'fake',
     fake: {
+      url: 'google.com',
       settings: {
         connection: '4G',
         location: 'TestLocation',
@@ -83,7 +83,6 @@ let fakeSources = [
   },
   {
     selected: false,
-    url: 'examples.com',
     label: 'Example',
     recurring: {
       frequency: null,
@@ -91,6 +90,7 @@ let fakeSources = [
     },
     gatherer: 'fake',
     fake: {
+      url: 'examples.com',
       settings: {
         connection: '3G',
         location: 'TestLocation',
@@ -102,7 +102,6 @@ let fakeSources = [
   },
   {
     selected: true,
-    url: 'web.dev',
     label: 'Web.Dev',
     recurring: {
       frequency: 'Daily',
@@ -110,6 +109,7 @@ let fakeSources = [
     },
     gatherer: 'fake',
     fake: {
+      url: 'web.dev',
       settings: {
         connection: '3G',
         location: 'TestLocation',
@@ -126,9 +126,9 @@ let fakeResults = [
     selected: true,
     id: 'id-1234',
     type: 'single',
-    url: 'google.com',
     status: Status.RETRIEVED,
     fake: {
+      url: 'google.com',
       metrics: {
         SpeedIndex: 500,
       },
@@ -141,9 +141,9 @@ let fakeResults = [
     selected: false,
     id: 'id-5678',
     type: 'recurring',
-    url: 'web.dev',
     status: Status.RETRIEVED,
     fake: {
+      url: 'web.dev',
       metrics: {
         SpeedIndex: 800,
       },
@@ -282,9 +282,9 @@ describe('AppScriptConnector Results tab', () => {
       selected: true,
       id: 'id-9999',
       type: 'single',
-      url: 'google.com',
       status: Status.RETRIEVED,
       fake: {
+        url: 'google.com',
         metrics: {
           SpeedIndex: 500,
         },
@@ -307,9 +307,9 @@ describe('AppScriptConnector Results tab', () => {
       selected: true,
       id: 'id-1234',
       type: 'recurring',
-      url: 'web.dev',
       status: Status.ERROR,
       fake: {
+        url: 'web.dev',
         metrics: {
           SpeedIndex: 800,
         },
@@ -323,7 +323,7 @@ describe('AppScriptConnector Results tab', () => {
 
     expect(actualResults.length).toEqual(2);
     expect(actualResults[1].status).toEqual(Status.ERROR);
-    expect(actualResults[1].url).toEqual('web.dev');
+    expect(actualResults[1].fake.url).toEqual('web.dev');
   });
 
   it('gets Env Vars in JSON format.', async () => {
@@ -409,7 +409,7 @@ describe('AppScriptConnector additional functions', () => {
     propertyLookup = connector.getPropertyLookup('Sources-1');
     expect(propertyLookup).toEqual([
       'selected',
-      'url',
+      'fake.url',
       'label',
       'recurring.frequency',
       'recurring.nextTriggerTimestamp',

@@ -52,29 +52,14 @@ Examples:
   # Run sources from a CSV file and writes results to a JSON file.
   ./docsheet run csv:examples/tests.csv json:output/results.json
 
-  # Run recurring sources continuously. Press CTRL/Command+C to stop.
-  ./docsheet continue examples/tests-recurring.json output/results.json
-
-  # Run PageSpeedInsight sources with an API Key.
-  PSI_APIKEY=<YOUR_API_KEY> ./docsheet run examples/tests.json output/results.json
-
-  # Run WebPageTest sources with an API Key.
-  WPT_APIKEY=<YOUR_API_KEY> ./docsheet run examples/tests-wpt.json output/results.json
-
   # Retrieve pending results (For WebPageTest usage)
   WPT_APIKEY=<YOUR_API_KEY> ./docsheet retrieve examples/tests-wpt.json output/results.json
 
   # Retrieve from CrUX API
   CRUX_APIKEY=<YOUR_API_KEY> ./docsheet run examples/tests-cruxapi.json output/results.json
 
-  # Run sources with budget extension
-  ./docsheet run examples/tests.json output/results.json --extensions=budgets
-
   # Run sources and override existing results in the output file.
   ./docsheet run examples/tests.json output/results.json --override-results
-
-  # Run a single test with a specific URL via URL-Connector.
-  ./docsheet run --gatherers=psi url:https://web.dev json:output/results.json
 
   # Run with a custom coreConfig.
   ./docsheet run --config=examples/awp-config.json
@@ -179,10 +164,7 @@ async function begin() {
 
   let options = {
     filters: filters,
-    runByBatch: runByBatch,
     overrideResults: overrideResults,
-    timerInterval: timerInterval,
-    activateOnly: activateOnly,
     gatherer: gatherers,
     verbose: verbose,
     debug: debug,
@@ -191,17 +173,6 @@ async function begin() {
   switch (action) {
     case 'run':
       await core.run(options);
-      break;
-
-    case 'recurring':
-      await core.recurring(options);
-      break;
-
-    case 'continue':
-      await core.continue(options);
-
-    case 'retrieve':
-      await core.retrieve(options);
       break;
 
     default:

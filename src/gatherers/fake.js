@@ -16,48 +16,28 @@
 
 'use strict';
 
-const assert = require('../utils/assert');
 const Status = require('../common/status');
 const Gatherer = require('./gatherer');
 
-class DocaiGatherer extends Gatherer {
+class FakeGatherer extends Gatherer {
   constructor(config, envVars, apiHandler) {
     super();
-    assert(config, 'Parameter config is missing.');
-    assert(envVars, 'Parameter apiHandler is missing.');
-    assert(apiHandler, 'Parameter apiHandler is missing.');
-
-    this.runApiEndpoint = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
-    this.resultApiEndpoint = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
-    this.apiKey = envVars.PSI_APIKEY || envVars.psiApiKey;
-    this.apiHandler = apiHandler;
-
-    // TODO: Metadata keys should be standardized.
-    this.metadataMap = {
-      'testId': 'id',
-      'requestedUrl': 'lighthouseResult.requestedUrl',
-      'finalUrl': 'lighthouseResult.finalUrl',
-      'lighthouseVersion': 'lighthouseResult.lighthouseVersion',
-      'userAgent': 'lighthouseResult.userAgent',
-      'fetchTime': 'lighthouseResult.fetchTime',
-    };
   }
 
   run(source, options) {
-    let errors = [];
-
     return {
       status: Status.RETRIEVED,
       statusText: 'Success',
       metadata: {},
+      url: source.fake.url,
       data: {
         name: 'test',
         address: 'test-address',
         phone: 'phone',
       },
-      errors: errors,
+      errors: [],
     }
   }
 }
 
-module.exports = DocaiGatherer;
+module.exports = FakeGatherer;

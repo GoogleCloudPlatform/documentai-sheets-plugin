@@ -28,7 +28,7 @@ const { AppScriptHelper, SystemVars } = require('../helpers/appscript-helper');
  * - Before each run, convert location name to id based on location tab.
  * - After each run, convert location id to name based on location tab.
  * - After all runs, create trigger for retrieving results.
- * - After each retrieve, update modifiedDate and send analytic signals to
+ * - After each retrieve, update modifiedDatetime and send analytic signals to
  *     Google Analytics.
  * - After all retrieves, delete trigger for
  *     retreiving results.
@@ -49,6 +49,7 @@ class AppScriptExtension extends Extension {
     this.spreadsheetId = AppScriptHelper.getSpreadsheetId();
     this.locations = null;
     this.debug = config.debug || false;
+    this.userTimeZone = envVars['userTimezone'] || 'America/New_York';
 
     // Default values mappings.
     this.defaultResultValues = {
@@ -74,14 +75,14 @@ class AppScriptExtension extends Extension {
     let result = context.result;
 
     if (result) {
-      // Format createdDate
+      // Format createdDatetime
       if (result.createdTimestamp) {
-        result.createdDate = AppScriptHelper.getFormattedDate(
+        result.createdDatetime = AppScriptHelper.getFormattedDate(
           new Date(result.createdTimestamp), this.userTimeZone, 'MM/dd/YYYY HH:mm:ss');
       }
-      // Format modifiedDate
+      // Format modifiedDatetime
       if (result.modifiedTimestamp) {
-        result.modifiedDate = AppScriptHelper.getFormattedDate(
+        result.modifiedDatetime = AppScriptHelper.getFormattedDate(
           new Date(result.modifiedTimestamp), this.userTimeZone, 'MM/dd/YYYY HH:mm:ss');
       }
 
@@ -105,22 +106,6 @@ class AppScriptExtension extends Extension {
     // let pendingResults = results.filter(result => {
     //   return result.status === Status.SUBMITTED;
     // });
-  }
-
-  /**
-   * afterRetrieve - Update modifiedDate for the Result, and send analytics
-   *     signals to Google Analytics.
-   * @param {object} context Context object that contains the processed Result.
-   */
-  afterRetrieve(context, options) {
-    let result = context.result;
-
-    // Format modifiedDate
-    if (result.modifiedTimestamp) {
-      result.modifiedDate = AppScriptHelper.getFormattedDate(
-        new Date(result.modifiedTimestamp), this.userTimeZone,
-        'MM/dd/YYYY HH:mm:ss');
-    }
   }
 
   /**
