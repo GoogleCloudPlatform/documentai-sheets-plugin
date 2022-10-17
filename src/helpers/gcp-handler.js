@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ class BigQueryHandler {
     this.projectId = config.projectId;
     this.keyFilename = config.keyFilename;
 
-    switch(this.platform.toLowerCase()) {
+    switch (this.platform.toLowerCase()) {
       case 'gcp':
       case 'node':
         // Create GCP client for each requested GCP product.
@@ -72,7 +72,7 @@ class BigQueryHandler {
     options = options || {};
     let timeout = options.timeout || 1000 * 60 * 5; // Default 5 minutes.
 
-    switch(this.platform.toLowerCase()) {
+    switch (this.platform.toLowerCase()) {
       case 'gcp':
       case 'node':
         {
@@ -124,9 +124,9 @@ class BigQueryHandler {
 
           while (queryResults.pageToken && timeElapseMs < timeout) {
             queryResults = BigQuery.Jobs.getQueryResults(
-                this.projectId, jobId, {
-                  pageToken: queryResults.pageToken
-                });
+              this.projectId, jobId, {
+              pageToken: queryResults.pageToken
+            });
             rows = rows.concat(queryResults.rows);
 
             // Check if timeout.

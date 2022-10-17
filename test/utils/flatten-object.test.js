@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ describe('flattenObject test', () => {
       'b.b2': 'B2',
       c: 'C1',
     });
- 
+
     newObj = flattenObject({
       a: {
         a1: {
@@ -80,6 +80,6 @@ describe('flattenObject test', () => {
       'b.b1': 'B1',
       'b.b2': 'B2',
       c: 'C1',
-    });    
+    });
   });
 });

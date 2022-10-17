@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,18 +18,13 @@ class Connector {
   constructor(config, apiHandler, envVars) {
     config = config || {};
     this.apiHandler = apiHandler;
-    this.envVars = envVars;
-    this.sourcesPath = config.sourcesPath;
-    this.resultsPath = config.resultsPath;
     this.verbose = config.verbose;
     this.debug = config.debug;
   }
-  getEnvVars() { }
-  getSourceLIst(options) { }
-  updateSourceList(newSources, options) { }
-  getResultList(options) { }
-  appendResultList(newResults, options) { }
-  updateResultList(newResults, options) { }
+  getDataList(tabId, options) { }
+  updateDataList(tabId, newItems, options) { }
+  appenddataList(tabId, newItems, options) { }
+  clearDataList(tabId) { }
 }
 
 module.exports = Connector;

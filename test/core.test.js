@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 'use strict';
 
-const DataCollectionFramework = require('../src/core');
+const DataGathererFramework = require('../src/core');
 const Connector = require('../src/connectors/connector');
 const Gatherer = require('../src/gatherers/gatherer');
 const Extension = require('../src/extensions/extension');
@@ -58,13 +58,12 @@ let generateFakeResults = function (amount, options) {
   while (count <= amount) {
     let result = {
       id: 'result-' + (count + offset),
-      type: 'Single',
       url: 'url-' + count,
       label: 'label-' + count,
-      status: Status.SUBMITTED,
+      status: Status.RETRIEVED,
       gatherer: 'fake',
       fake: {
-        status: Status.SUBMITTED,
+        status: Status.RETRIEVED,
         settings: {
           connection: '4G',
         },
@@ -75,9 +74,6 @@ let generateFakeResults = function (amount, options) {
     if (options.status) {
       result.status = options.status;
       result.fake.status = options.status;
-      result.fake.metrics = {
-        SpeedIndex: 500,
-      };
     }
 
     results.push(result);
@@ -112,57 +108,43 @@ class FakeConnector extends Connector {
       }
     };
   }
-  getSourceLIst() {
-    return this.sources;
+  getDataList(datasetId) {
+    if (datasetId === 'Sources-1') {
+      return this.sources;
+    } else if (datasetId === 'Results-1') {
+      return this.results;
+    }
+    return [];
   }
-  updateSourceList(newSources) {
-    this.sources.forEach(source => {
-      return newSources.filter(x => source.id === x.id)[0];
-    });
+  updateDataList(datasetId, newItems) {
+    if (datasetId === 'Sources-1') {
+      if (datasetId === 'Sources-1') {
+        return this.sources;
+      } else if (datasetId === 'Results-1') {
+        return this.results;
+      }
+    } else if (datasetId === 'Results-1') {
+      this.results.forEach(result => {
+        return newItems.filter(x => result.id === x.id)[0];
+      });
+    }
   }
-  getResultList() {
-    return this.results;
-  }
-  appendResultList(newResults) {
-    this.results = this.results.concat(newResults);
-  }
-  updateResultList(newResults) {
-    this.results.forEach(result => {
-      return newResults.filter(x => result.id === x.id)[0];
-    });
+  appendDataList(datasetId, newItems) {
+    if (datasetId === 'Sources-1') {
+      this.sources = this.sources.concat(newItems);
+    } else if (datasetId === 'Results-1') {
+      this.results = this.results.concat(newItems);
+    }
   }
 }
 
 class FakeGatherer extends Gatherer {
   run(source) {
     return {
-      status: Status.SUBMITTED,
+      status: Status.RETRIEVED,
       settings: source.fake.settings,
     };
   }
-  async runBatch(sources) {
-    let responseList = sources.map(source => {
-      return {
-        status: Status.RETRIEVED,
-        settings: test.fake.settings,
-        metrics: {
-          SpeedIndex: 500,
-        }
-      };
-    });
-    return responseList;
-  }
-  retrieve(result) {
-    return {
-      status: Status.RETRIEVED,
-      metadata: result.fake.metadata,
-      settings: result.fake.settings,
-      metrics: {
-        SpeedIndex: 500,
-      },
-    };
-  }
-  retrieveBatch(results) { }
 }
 
 class FakeExtension extends Extension {
@@ -170,32 +152,22 @@ class FakeExtension extends Extension {
   afterRun(source, result) { }
   beforeAllRuns(sources, results) { }
   afterAllRuns(sources, results) { }
-  beforeRetrieve(result) { }
-  afterRetrieve(result) { }
-  beforeAllRetrieves(results) { }
-  afterAllRetrieves(results) { }
 }
 
 const fakeApiHandler = function (url) {
   return {};
 }
 
-describe('DataCollectionFramework with fake modules', () => {
+describe('DataGathererFramework with fake modules', () => {
   let core;
 
   beforeEach(() => {
     let coreConfig = {
-      sources: {
-        connector: 'fake',
-        path: 'fake/path'
-      },
-      results: {
-        connector: 'fake',
-        path: 'fake/path'
-      },
       helper: 'fake',
+      connector: 'fake',
+      quiet: true,
     };
-    core = new DataCollectionFramework(coreConfig);
+    core = new DataGathererFramework(coreConfig);
     core.connector = new FakeConnector();
     core.apiHandler = fakeApiHandler;
     core.gatherers = {
@@ -217,67 +189,37 @@ describe('DataCollectionFramework with fake modules', () => {
     expect(core).not.toBe(null);
   });
 
-  it('runs through a list of sources and gets initial results.', async () => {
-    core.connector.sources = generateFakeSources(10);
-    await core.run();
+  it('runs through a list of sources and gets results.', async () => {
+    let sources = generateFakeSources(10);
+    core.connector.appendDataList('Sources-1', sources);
+    await core.run('Sources-1', 'Results-1');
 
-    cleanFakeResults(core.connector.results);
     let expectedResults = generateFakeResults(10);
-    expect(await core.getResults()).toEqual(expectedResults);
-
-    await core.run();
-
-    cleanFakeResults(core.connector.results);
-    expectedResults = expectedResults.concat(generateFakeResults(10, {
-      idOffset: 10,
-    }));
-    expect(await core.getResults()).toEqual(expectedResults);
-  });
-
-  it('runs recurring and gets initial Results.', async () => {
-    let nowtime = Date.now();
-
-    // Activate recurring Sources.
-    core.connector.sources = generateFakeSources(10);
-    let source = core.connector.sources[0];
-    source.recurring = {
-      frequency: 'daily',
-    }
-
-    // Run recurring.
-    source.recurring.nextTriggerTimestamp = nowtime;
-    await core.recurring();
-    cleanFakeResults(core.connector.results);
-
-    let expectedResults = generateFakeResults(1);
-    expectedResults[0].type = 'Recurring';
-    expect(await core.getResults()).toEqual(expectedResults);
+    let actualResults = await core.getDataList('Results-1');
+    actualResults = cleanFakeResults(actualResults);
+    expect(actualResults).toEqual(expectedResults);
   });
 
   it('retrieves non-complete results.', async () => {
     core.connector.sources = generateFakeSources(1);
-    await core.run();
-    await core.retrieve();
+    await core.run('Sources-1', 'Results-1');
 
     cleanFakeResults(core.connector.results);
     let expectedResults = generateFakeResults(1, { status: Status.RETRIEVED });
 
-    let results = await core.getResults();
+    let results = await core.getDataList('Results-1');
     expect(results).toEqual(expectedResults);
-    expect(results[0].fake.metrics.SpeedIndex).toEqual(500);
   });
 
   it('retrieves all non-complete results.', async () => {
     core.connector.sources = generateFakeSources(10);
-    await core.run();
-    await core.retrieve();
+    await core.run('Sources-1', 'Results-1');
 
     cleanFakeResults(core.connector.results);
     let expectedResults = generateFakeResults(10, { status: Status.RETRIEVED });
 
-    let results = await core.getResults();
+    let results = await core.getDataList('Results-1');
     expect(results).toEqual(expectedResults);
-    expect(results[0].fake.metrics.SpeedIndex).toEqual(500);
   });
 
   it('runs and retrieves all results with partial updates with long list.',
@@ -287,14 +229,9 @@ describe('DataCollectionFramework with fake modules', () => {
       core.batchUpdateBuffer = 10;
 
       expectedResults = generateFakeResults(95);
-      await core.run();
+      await core.run('Sources-1', 'Results-1');
       cleanFakeResults(core.connector.results);
-      expect(await core.getResults()).toEqual(expectedResults);
-
-      await core.retrieve();
-      cleanFakeResults(core.connector.results);
-      expectedResults = generateFakeResults(95, { status: Status.RETRIEVED });
-      expect(await core.getResults()).toEqual(expectedResults);
+      expect(await core.getDataList('Results-1')).toEqual(expectedResults);
     });
 
   it('runs and retrieves all results with partial updates with short list.',
@@ -304,110 +241,18 @@ describe('DataCollectionFramework with fake modules', () => {
       core.batchUpdateBuffer = 5;
 
       expectedResults = generateFakeResults(22);
-      await core.run();
+      await core.run('Sources-1', 'Results-1');
       cleanFakeResults(core.connector.results);
-      expect(await core.getResults()).toEqual(expectedResults);
-
-      await core.retrieve();
-      cleanFakeResults(core.connector.results);
-      expectedResults = generateFakeResults(22, { status: Status.RETRIEVED });
-      expect(await core.getResults()).toEqual(expectedResults);
+      expect(await core.getDataList('Results-1')).toEqual(expectedResults);
     });
-
-  it('runs and retrieves all recurring results with partial updates.', async () => {
-    core.connector.sources = generateFakeSources(22);
-    core.batchUpdateBuffer = 5;
-    let nowtime = Date.now();
-    core.connector.sources.forEach(source => {
-      source.recurring = {
-        frequency: 'daily',
-      }
-    });
-
-    await core.recurring();
-    core.connector.sources.forEach(source => {
-      source.recurring.nextTriggerTimestamp = nowtime;
-    });
-    cleanFakeResults(core.connector.results);
-
-    let expectedResults = generateFakeResults(22);
-    expectedResults.forEach(result => { result.type = 'Recurring' });
-    let actualResults = await core.getResults();
-    expect(actualResults).toEqual(expectedResults);
-  });
 
   it('runs through a list of sources and executes extensions.', async () => {
     core.connector.sources = generateFakeSources(10);
-    await core.run();
+    await core.run('Sources-1', 'Results-1');
     expect(core.extensions.fake.beforeAllRuns.mock.calls.length).toBe(1);
     expect(core.extensions.fake.afterAllRuns.mock.calls.length).toBe(1);
     expect(core.extensions.fake.beforeRun.mock.calls.length).toBe(10);
     expect(core.extensions.fake.afterRun.mock.calls.length).toBe(10);
-  });
-
-  it('runs activateOnly recurring and executes extensions.', async () => {
-    core.connector.sources = generateFakeSources(10, {
-      recurring: { frequency: 'daily' },
-    });
-
-    await core.recurring();
-    expect(core.extensions.fake.beforeAllRuns.mock.calls.length).toBe(1);
-    expect(core.extensions.fake.afterAllRuns.mock.calls.length).toBe(1);
-    expect(core.extensions.fake.beforeRun.mock.calls.length).toBe(10);
-    expect(core.extensions.fake.afterRun.mock.calls.length).toBe(10);
-  });
-
-  it('runs recurring through a list of sources and executes extensions.',
-    async () => {
-      core.connector.sources = generateFakeSources(10, {
-        recurring: { frequency: 'daily' },
-      });
-
-      await core.recurring();
-      expect(core.extensions.fake.beforeAllRuns.mock.calls.length).toBe(1);
-      expect(core.extensions.fake.beforeRun.mock.calls.length).toBe(10);
-      expect(core.extensions.fake.afterRun.mock.calls.length).toBe(10);
-      expect(core.extensions.fake.afterAllRuns.mock.calls.length).toBe(1);
-    });
-
-  it('runs recurring through a list of sources that passed nextTriggerTimestamp',
-    async () => {
-      core.connector.sources = generateFakeSources(10, {
-        recurring: { frequency: 'daily' },
-      });
-
-      let futureTime = Date.now() + 1000000;
-      core.connector.sources[0].recurring.nextTriggerTimestamp = futureTime;
-      core.connector.sources[1].recurring.nextTriggerTimestamp = futureTime;
-
-      let { sources, results } = await core.recurring();
-      expect(sources.length).toBe(8);
-      expect(results.length).toBe(8);
-    });
-
-  it('retrieves a list of results and executes extensions.', async () => {
-    core.connector.sources = generateFakeSources(10);
-    await core.run();
-    await core.retrieve();
-    expect(core.extensions.fake.beforeAllRetrieves.mock.calls.length).toBe(1);
-    expect(core.extensions.fake.afterAllRetrieves.mock.calls.length).toBe(1);
-    expect(core.extensions.fake.beforeRetrieve.mock.calls.length).toBe(10);
-    expect(core.extensions.fake.afterRetrieve.mock.calls.length).toBe(10);
-  });
-
-  it('retrieves a list of metrics for each Result in batch mode.', async () => {
-    core.connector.sources = generateFakeSources(10);
-    await core.run({ runByBatch: true });
-
-    let results = core.connector.results;
-    expect(results.length).toEqual(10);
-
-    results.forEach(result => {
-      if (result.fake) {
-        let metrics = result.fake.metrics;
-        expect(metrics).not.toBe(undefined);
-      }
-    })
   });
 
   it('updates overall status based on responses from data sources.',
@@ -445,9 +290,9 @@ describe('DataCollectionFramework with fake modules', () => {
         fake2: genGatherer(Status.SUBMITTED),
         fake3: genGatherer(Status.SUBMITTED),
       }
-      await core.run();
+      await core.run('Sources-1', 'Results-1');
 
-      result = (await core.getResults())[0];
+      result = (await core.getDataList('Results-1'))[0];
       expect(result.fake1).toBeDefined();
       expect(result.fake2).toBeDefined();
       expect(result.fake3).toBeDefined();
@@ -461,9 +306,9 @@ describe('DataCollectionFramework with fake modules', () => {
         fake2: genGatherer(Status.RETRIEVED),
         fake3: genGatherer(Status.SUBMITTED),
       }
-      await core.run();
+      await core.run('Sources-1', 'Results-1');
 
-      result = (await core.getResults())[1];
+      result = (await core.getDataList('Results-1'))[1];
       expect(result.fake1).toBeDefined();
       expect(result.fake2).toBeDefined();
       expect(result.fake3).toBeDefined();
@@ -477,9 +322,9 @@ describe('DataCollectionFramework with fake modules', () => {
         fake2: genGatherer(Status.RETRIEVED),
         fake3: genGatherer(Status.RETRIEVED),
       }
-      await core.run();
+      await core.run('Sources-1', 'Results-1');
 
-      result = (await core.getResults())[2];
+      result = (await core.getDataList('Results-1'))[2];
       expect(result.fake1).toBeDefined();
       expect(result.fake2).toBeDefined();
       expect(result.fake3).toBeDefined();
@@ -493,9 +338,9 @@ describe('DataCollectionFramework with fake modules', () => {
         fake2: genGatherer(Status.ERROR),
         fake3: genGatherer(Status.RETRIEVED),
       }
-      await core.run();
+      await core.run('Sources-1', 'Results-1');
 
-      result = (await core.getResults())[3];
+      result = (await core.getDataList('Results-1'))[3];
       expect(result.fake1).toBeDefined();
       expect(result.fake2).toBeDefined();
       expect(result.fake3).toBeDefined();

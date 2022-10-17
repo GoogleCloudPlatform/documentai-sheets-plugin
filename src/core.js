@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,15 @@
 'use strict';
 
 const Status = require('./common/status');
-const { Frequency, FrequencyInMinutes } = require('./common/frequency');
 const assert = require('./utils/assert');
-const { TestType } = require('./common/types');
-const MultiConnector = require('./connectors/multi-connector');
 const ApiHandler = require('./helpers/api-handler');
 
 /**
- * DataCollectionFramework main class.
- * Please check README.md for more details of the usage DataCollectionFramework instance.
+ * DataGathererFramework main class.
+ * Please check README.md for more details of the usage DataGathererFramework instance.
  *
- * Exmaples of creating a new instance of DataCollectionFramework:
- *   let core = new DataCollectionFramework({
+ * Exmaples of creating a new instance of DataGathererFramework:
+ *   let core = new DataGathererFramework({
  *     connector: 'JSON',
  *     helper: 'Node',
  *     gathererNames: ['webpagetest'],
@@ -41,55 +38,26 @@ const ApiHandler = require('./helpers/api-handler');
  *     debug: debug,
  *   });
  */
-class DataCollectionFramework {
+class DataGathererFramework {
   /**
    * @param {object} coreConfig The overall config object, including sub-configs
    *     for connetor, helpers, gatherers, and extension modules.
-   *
-   * Mandatory properties:
-   * - coreConfig.gathererNames {Array<string>} The array of gatherer names.
-   *     e.g. ['webpagetest', 'psi']
-   * - coreConfig.sources {object} Settings for sources including connector and path.
-   *     e.g. {'connector': 'json', 'path': '/path/to/tests.json'}
-   * - coreConfig.results {object} Settings for results including connector and path.
-   *     e.g. {'connector': 'json', 'path': '/path/to/results.json'}
-   * - coreConfig.helper {string} Helper name. E.g. 'node'.
-   *
-   * Sub-configs:
-   * - Connector config. E.g. `coreConfig.appscript` is the config object for
-   *     GoogleSheets connector and extension module.
-   * - Extension config. E.g. `coreConfig.budget` is the config object for Budget
-   *     extension module.
    */
   constructor(coreConfig) {
     this.debug = coreConfig.debug || false;
     this.verbose = coreConfig.verbose || false;
+    this.quiet = coreConfig.quiet || false;
     this.config = {};
 
     assert(coreConfig, 'coreConfig is missing');
-    assert(coreConfig.sources, 'coreConfig.sources is missing.');
-    assert(coreConfig.results, 'coreConfig.results is missing.');
 
     this.coreConfig = coreConfig;
-    coreConfig.envVars = coreConfig.envVars || {};
     this.overallGathererNames = ['docai'];
 
-    // Load environment varaibles with coreConfig.envVars.
-    this.log(`Use envVars:`);
-    this.envVars = {};
-    Object.keys(this.coreConfig.envVars).forEach(key => {
-      this.envVars[key] = this.coreConfig.envVars[key];
-    });
-
     // Initialize helper. Use Node helper by default.
-    coreConfig.helper = coreConfig.helper || 'node';
+    coreConfig.helper = coreConfig.helper || 'appscript';
     this.log(`Use helper: ${coreConfig.helper}`);
     switch (coreConfig.helper.toLowerCase()) {
-      case 'node':
-        let { NodeApiHandler } = require('./helpers/node-helper');
-        this.apiHandler = new NodeApiHandler();
-        break;
-
       case 'appscript':
         let { AppScriptApiHandler } = require('./helpers/appscript-helper');
         this.apiHandler = new AppScriptApiHandler();
@@ -107,30 +75,17 @@ class DataCollectionFramework {
         break;
     }
 
-    // Create connector instance(s).
-    coreConfig.sources.connector = coreConfig.sources.connector;
-    coreConfig.results.connector = coreConfig.results.connector;
-    this.log(`Use connector for sources: ${JSON.stringify(coreConfig.sources.connector)}`);
-    this.log(`Use connector for results: ${JSON.stringify(coreConfig.results.connector)}`);
-
-    // When using different connectors, initialize a MultiConnector.
-    let sourcesConnector = this.getConnector(coreConfig.sources.connector);
-    let resultsConnector = this.getConnector(coreConfig.results.connector);
-    this.connector = new MultiConnector(coreConfig, this.apiHandler,
-      this.envVars, sourcesConnector, resultsConnector);
-
-    // Note that API Keys used by Gatherers are expected to be loaded as envVars
-    // via either connector or coreConfig.
-    if (this.connector) {
-      let envVarsFromConnector = this.connector.getEnvVars() || {};
-      Object.keys(envVarsFromConnector).forEach(key => {
-        this.envVars[key] = envVarsFromConnector[key];
-      });
+    if (coreConfig.connector === 'fake') {
+      this.connector = {
+        getEnvVars: () => { },
+      };
+    } else {
+      this.connector = this.getConnector(coreConfig["appscript"]);
     }
-
-    this.log(`Use extensions: ${coreConfig.extensions}`);
+    this.envVars = this.connector.getEnvVars();
 
     // Initialize extensions.
+    this.log(`Use extensions: ${coreConfig.extensions}`);
     this.extensions = {};
     if (coreConfig.extensions) {
       coreConfig.extensions.forEach(extension => {
@@ -148,8 +103,12 @@ class DataCollectionFramework {
             break;
 
           default:
-            throw new Error(
-              `Extension ${extension} is not supported.`);
+            try {
+              ExtensionClass = require('./extensions/' + extension);
+            } catch (e) {
+              console.error(e);
+              throw new Error(`Unable to load extension: ./extensions/${extension}`);
+            }
             break;
         }
         this.extensions[extension] = new ExtensionClass(extConfig,
@@ -164,7 +123,7 @@ class DataCollectionFramework {
     // E.g. batchUpdateBuffer = 10 means for every 10 run or retrieve, it will
     // update the data by calling connector.updateSourceList or updateResultList.
     // When batchUpdateBuffer is 0, it will write back after all iteration.
-    this.batchUpdateBuffer = coreConfig.batchUpdateBuffer || 0;
+    this.batchUpdateBuffer = coreConfig.batchUpdateBuffer || 10;
   }
 
   /**
@@ -172,51 +131,9 @@ class DataCollectionFramework {
    * @param {string} name Connector name. E.g. 'json'.
    * @return {object} Connector instance.
    */
-  getConnector(name) {
-    let ConnectorClass = null, connectorName = name.toLowerCase();
-    let connectorConfig = this.coreConfig[connectorName] || {};
-
-    connectorConfig.sourcesPath = this.coreConfig.sources.path;
-    connectorConfig.resultsPath = this.coreConfig.results.path;
-    connectorConfig.verbose = this.coreConfig.verbose;
-    connectorConfig.debug = this.coreConfig.debug;
-
-    switch (connectorName) {
-      case 'json':
-        ConnectorClass = require('./connectors/json-connector');
-        break;
-
-      case 'jsondata':
-        ConnectorClass = require('./connectors/jsondata-connector');
-        break;
-
-      case 'csv':
-        ConnectorClass = require('./connectors/csv-connector');
-        break;
-
-      case 'appscript':
-        ConnectorClass = require('./connectors/appscript-connector');
-        break;
-
-      case 'sheets':
-        ConnectorClass = require('./connectors/sheets-connector');
-        break;
-
-      case 'fake':
-        // Load dummy connector for testing purpose.
-        ConnectorClass = require('./connectors/connector');
-        break;
-
-      default:
-        try {
-          ConnectorClass = require(`./connectors/${name}-connector`);
-        } catch (e) {
-          throw new Error(`Unable to load connector: ./connectors/${name}-connector`);
-        }
-        break;
-    }
-
-    return new ConnectorClass(connectorConfig, this.apiHandler, this.envVars);
+  getConnector(connectorConfig) {
+    ConnectorClass = require('./connectors/appscript-connector');
+    return new ConnectorClass(connectorConfig, this.apiHandler);
   }
 
   /**
@@ -236,20 +153,8 @@ class DataCollectionFramework {
       let gathererConfig = this.coreConfig[name] || {};
 
       switch (name) {
-        case 'webpagetest':
-          GathererClass = require('./gatherers/webpagetest');
-          break;
-
-        case 'psi':
-          GathererClass = require('./gatherers/psi');
-          break;
-
-        case 'cruxbigquery':
-          GathererClass = require('./gatherers/cruxbigquery');
-          break;
-
-        case 'cruxapi':
-          GathererClass = require('./gatherers/cruxapi');
+        case 'docai':
+          GathererClass = require('./gatherers/docai');
           break;
 
         case 'fake':
@@ -300,20 +205,21 @@ class DataCollectionFramework {
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
    */
-  async run(options) {
+  async run(srcDatasetId, destDatasetId, options) {
     options = options || {};
     let extensions = options.extensions || Object.keys(this.extensions);
     let extResponse, overallErrors = [];
-
-    let sources = await this.connector.getSourceLIst(options);
-    console.log(`Run with ${sources.length} test(s)`);
+    let overrideResults = options.overrideResults || false;
+    let sources = await this.connector.getDataList(srcDatasetId, options);
+    let envVars = this.connector.getEnvVars();
+    options.envVars = envVars;
 
     // Before all runs.
     extResponse = this.runExtensions(extensions, 'beforeAllRuns', { sources: sources }, options);
     overallErrors = overallErrors.concat(extResponse.errors);
 
-    // Run tests.
-    let newResults = await this.execute(sources, options);
+    // Run gatherer.
+    let newResults = await this.execute(destDatasetId, sources, options);
 
     // Collect all errors.
     newResults.forEach(result => {
@@ -329,276 +235,18 @@ class DataCollectionFramework {
     }, options);
     overallErrors = overallErrors.concat(extResponse.errors);
 
-    if (overallErrors.length > 0) {
-      console.log(`Run completed for ${sources.length} sources with errors:`);
-      console.log(overallErrors);
-    } else {
-      console.log(`Run completed for ${sources.length} tests.`);
-    }
-
-    return {
-      sources: sources,
-      results: newResults,
-      errors: overallErrors,
-    };
-  }
-
-  /**
-   * Run recurring sources and writes output to results.
-   * @param {object} options
-   * @return {object} Procssed Sources and Results.
-   *
-   * Available options:
-   * - filters {Array<string>}: Use `options.filters` to filter
-   *     sources that match conditions. See `src/utils/pattern-filter.js` for
-   *     more details.
-   * - activateOnly {boolean}: When true, only update the nextTriggerTimestamp
-   *     to a Test object without running actual audit.
-   * - verbose {boolean}: Whether to show verbose messages in terminal.
-   * - debug {boolean}: Whether to show debug messages in terminal.
-   */
-  async recurring(options) {
-    options = options || {};
-    options.recurring = true;
-
-    let extensions = options.extensions || Object.keys(this.extensions);
-    let extResponse, overallErrors = [];
-    let sourcesToUpdate = [], resultsToUpdate = [];
-    let newResults = [];
-    let nowtime = Date.now();
-
-    // Get recurring Sources that passed nextTriggerTimestamp only.
-    let sources = await this.connector.getSourceLIst(options);
-    sources = sources.filter(source => {
-      let recurring = test.recurring;
-      return recurring && recurring.frequency &&
-        Frequency[recurring.frequency.toUpperCase()];
-    });
-
-    // Before all runs.
-    extResponse = this.runExtensions(extensions, 'beforeAllRuns', { sources: sources }, options);
-    overallErrors = overallErrors.concat(extResponse.errors);
-
-    if (options.activateOnly) {
-      console.log(`Run recurring with ${sources.length} source(s), activate only.`);
-
-      // Update next trigger timestamp only.
-      sources.forEach(source => {
-        // Before each run.
-        this.runExtensions(extensions, 'beforeRun', {
-          source: source,
-          result: null,
-        }, options);
-
-        this.logDebug('DataCollectionFramework::recurring with activateOnly.');
-        this.updateNextTriggerTimestamp(source);
-
-        // After each run with empty result.
-        this.runExtensions(extensions, 'afterRun', {
-          source: source,
-          result: null,
-        }, options);
-      });
-
-    } else {
-      // Filter Sources that have passed nextTriggerTimestamp or haven't set with
-      // nextTriggerTimestamp.
-      sources = sources.filter(source => {
-        let recurring = source.recurring;
-        return recurring &&
-          (!recurring.nextTriggerTimestamp ||
-            recurring.nextTriggerTimestamp <= nowtime);
-      });
-      console.log(`Run recurring with ${sources.length} source(s).`);
-
-      // Run sources and updates next trigger timestamp.
-      newResults = await this.execute(sources, options);
-
-      // Update next trigger timestamp.
-      sources.forEach(source => {
-        this.updateNextTriggerTimestamp(source);
-      });
-    }
-
-    // Before all runs.
-    extResponse = this.runExtensions(extensions, 'afterAllRuns', {
-      sources: sources,
-      results: newResults,
-    }, options);
-    overallErrors = overallErrors.concat(extResponse.errors);
-
-    // Update sources.
-    await this.connector.updateSourceList(sources, options);
-
-    console.log(`Recurring completed with ${sources.length} ` + `sources`);
-
-    return {
-      sources: sources,
-      results: newResults,
-      errors: overallErrors,
-    };
-  }
-
-  /**
-   * Continuously run DataCollectionFramework for recurring sources and retrieve pending results.
-   * @param {object} options
-   * @return {object} Procssed Sources and Results.
-   *
-   * Available options:
-   * - filters {Array<string>}: Use `options.filters` to filter
-   *     sources that match conditions. See `src/utils/pattern-filter.js` for
-   *     more details.
-   * - verbose {boolean}: Whether to show verbose messages in terminal.
-   * - debug {boolean}: Whether to show debug messages in terminal.
-   */
-  async continue(options) {
-    options = options || {};
-    options.recurring = true;
-    let self = this;
-    let isRunning = false;
-
-    // Set timer interval as every 10 mins by default.
-    let timerInterval = options.timerInterval ?
-      parseInt(options.timerInterval) : 60 * 10;
-
-    if (options.verbose) {
-      this.log(`Timer interval sets as ${timerInterval} seconds.`);
-    }
-
-    await self.recurring(options);
-
-    // Run contiuously.
-    return await new Promise(resolve => {
-      const interval = setInterval(async () => {
-        if (isRunning) return;
-
-        await self.recurring(options);
-        await self.retrieve(options);
-        isRunning = false;
-
-        if (options.verbose) {
-          self.log('Waiting for next timer triggered...');
-        }
-      }, timerInterval * 1000);
-    });
-  }
-
-  /**
-   * Retrieve test result for all filtered Results.
-   * @param  {object} options
-   * @return {object} Procssed Results.
-   *
-   * Available options:
-   * - filters {Array<string>}: Use `options.filters` to filter
-   *     sources that match conditions. See `src/utils/pattern-filter.js` for
-   *     more details.
-   * - verbose {boolean}: Whether to show verbose messages in terminal.
-   * - debug {boolean}: Whether to show debug messages in terminal.
-   */
-  async retrieve(options) {
-    options = options || {};
-    let extensions = options.extensions || Object.keys(this.extensions);
-    let resultsToUpdate = [], overallErrors = [], extResponse;
-
-    let results = await this.connector.getResultList(options);
-
-    // Clean up previous errors.
-    results.forEach(result => {
-      result.errors = [];
-    });
-
-    extResponse = this.runExtensions(extensions, 'beforeAllRetrieves', [] /* sources */,
-      results, options);
-    overallErrors = overallErrors.concat(extResponse.errors);
-
-    // Default filter for penging results only.
-    if (!options.filters || options.filters.length === 0) {
-      results = results.filter(result => {
-        return result.status === Status.SUBMITTED;
-      });
-    }
-    console.log(`Retrieving ${results.length} result(s).`);
-
-    // FIXME: Add batch gathering support.
-
-    let count = 0;
-    for (let i = 0; i < results.length; i++) {
-      let result = results[i];
-      this.log(`Retrieve: id=${result.id}`);
-      this.logDebug('DataCollectionFramework::retrieve, result=\n', result);
-      result.errors = result.errors || [];
-
-      // Before retriving the result.
-      extResponse = this.runExtensions(extensions, 'beforeRetrieve',
-        { result: result }, options);
-      result.errors = result.errors.concat(extResponse.errors);
-
-      let statuses = [];
-      let newResult = result;
-      newResult.modifiedTimestamp = Date.now();
-
-      // Interate through all gatherers.
-      let gathererNames = this.overallGathererNames.concat(
-        this.parseGathererNames(result.gatherer));
-      [...new Set(gathererNames)].forEach(gathererName => {
-        if (!result[gathererName]) return;
-        if (result[gathererName].status === Status.RETRIEVED) return;
-
-        let response = this.getGatherer(gathererName).retrieve(
-          result, { debug: true });
-        statuses.push(response.status);
-        newResult[gathererName] = response;
-
-        this.log(`Retrieve: ${gathererName} result: status=${response.status}`);
-      });
-
-      // Collect errors from all gatherers.
-      newResult.errors = result.errors.concat(this.getOverallErrors(newResult));
-
-      // Update overall status.
-      newResult.status = this.getOverallStatus(statuses);
-
-      // After retrieving the result.
-      extResponse = this.runExtensions(extensions, 'afterRetrieve',
-        { result: newResult }, options);
-      newResult.errors = newResult.errors.concat(extResponse.errors);
-
-      this.log(`Retrieve: overall status=${newResult.status}`);
-      this.logDebug('DataCollectionFramework::retrieve, statuses=\n', statuses);
-      this.logDebug('DataCollectionFramework::retrieve, newResult=\n', newResult);
-
-      resultsToUpdate.push(newResult);
-
-      // Batch update to the connector.
-      if (this.batchUpdateBuffer &&
-        resultsToUpdate.length >= this.batchUpdateBuffer) {
-        await this.connector.updateResultList(resultsToUpdate, options);
-        this.log(
-          `DataCollectionFramework::retrieve, batch appends ` +
-          `${resultsToUpdate.length} results.`);
-
-        resultsToUpdate = [];
+    if (!this.quiet) {
+      if (overallErrors.length > 0) {
+        console.log(`Run completed for ${sources.length} sources with errors:`);
+        console.log(overallErrors);
+      } else {
+        console.log(`Run completed for ${sources.length} sources.`);
       }
     }
 
-    // Update back to the result list.
-    await this.connector.updateResultList(resultsToUpdate, options);
-
-    // After retriving all results.
-    // FIXME: run the extensions before updating the list back to the connector.
-    extResponse = this.runExtensions(extensions, 'afterAllRetrieves',
-      { results: results }, options);
-    overallErrors = overallErrors.concat(extResponse.errors);
-
-    if (overallErrors.length > 0) {
-      console.log(`Retrieved ${results.length} results with errors:`);
-      console.log(overallErrors);
-    } else {
-      console.log(`Retrieved ${results.length} results.`);
-    }
-
     return {
-      results: results,
+      sources: sources,
+      results: newResults,
       errors: overallErrors,
     };
   }
@@ -616,7 +264,7 @@ class DataCollectionFramework {
    * - debug {boolean}: Whether to show debug messages in terminal.
    * @return {type}          description
    */
-  async execute(sources, options) {
+  async execute(destDatasetId, sources, options) {
     options = options || {};
     let extensions = options.extensions || Object.keys(this.extensions);
     let resultsToUpdate = [], allNewResults = [];
@@ -624,112 +272,58 @@ class DataCollectionFramework {
 
     // Before each run.
     sources.forEach(source => {
-      extResponse = this.runExtensions(extensions, 'beforeRun', { test: test });
+      extResponse = this.runExtensions(extensions, 'beforeRun', { source: source });
       test.errors = extResponse.errors;
     });
 
-    if (options.runByBatch) {
-      // Run sources with gatherers that uses run batch mode.
-      // Note that run batch mode doesn't support batch update to the connector.
-      let gathererNames = [], sourceResultPairs = [];
-      sources.forEach(source => {
-        sourceResultPairs.push({
-          source: source,
-          result: this.createNewResult(source, options),
-        });
-        gathererNames = gathererNames.concat(this.parseGathererNames(source.gatherer));
-      });
+    // Run one test at a time and collect metrics from all gatherers.
+    for (let i = 0; i < sources.length; i++) {
+      let source = sources[i];
+      let statuses = [];
 
-      // Run all gatherers.
+      // Create a dummy Result.
+      let newResult = this.createNewResult(source, options);
+
+      // Collect metrics from all gatherers.
+      let gathererNames = this.parseGathererNames(source.gatherer);
       gathererNames = gathererNames.concat(this.parseGathererNames(options.gatherer));
-      for (const gathererName of [...new Set(gathererNames)]) {
-        await this.runGathererInBatch(sources, gathererName, options).then(responseList => {
-          if (responseList)
-            for (let i = 0; i < sourceResultPairs.length; i++) {
-              sourceResultPairs[i].result[gathererName] = responseList[i];
-            }
-        });
-      }
-
-      // Update overall status and after each run.
-      sourceResultPairs.forEach(pair => {
-        let result = pair.result;
-
-        // Update the overall status.
-        let statuses = this.overallGathererNames.map(gathererName => {
-          return result[gathererName] ?
-            result[gathererName].status : Status.RETRIEVED;
-        });
-        result.status = this.getOverallStatus(statuses);
-
-        // Collect errors from all gatherers.
-        result.errors = this.getOverallErrors(result);
-
-        if (options.debug) {
-          console.log(result.errors);
+      [...new Set(gathererNames)].forEach(gathererName => {
+        let response = this.runGatherer(source, gathererName, options);
+        if (response) {
+          newResult[gathererName] = response;
+          statuses.push(newResult[gathererName].status);
         }
-
-        // After each run in batch.
-        extResponse = this.runExtensions(extensions, 'afterRun', {
-          test: pair.test,
-          result: result,
-        });
-        result.errors = result.errors.concat(extResponse.errors);
-
-        resultsToUpdate.push(pair.result);
-        allNewResults.push(pair.result);
       });
 
-    } else {
-      // Run one test at a time and collect metrics from all gatherers.
-      for (let i = 0; i < sources.length; i++) {
-        let source = sources[i];
-        let statuses = [];
+      // Update overall status.
+      newResult.status = this.getOverallStatus(statuses);
 
-        // Create a dummy Result.
-        let newResult = this.createNewResult(source, options);
+      // Collect errors from all gatherers.
+      newResult.errors = this.getOverallErrors(newResult);
 
-        // Collect metrics from all gatherers.
-        let gathererNames = this.parseGathererNames(source.gatherer);
-        gathererNames = gathererNames.concat(this.parseGathererNames(options.gatherer));
-        [...new Set(gathererNames)].forEach(gathererName => {
-          let response = this.runGatherer(source, gathererName, options);
-          if (response) {
-            newResult[gathererName] = response;
-            statuses.push(newResult[gathererName].status);
-          }
-        });
+      // After each run
+      extResponse = this.runExtensions(extensions, 'afterRun', {
+        source: source,
+        result: newResult,
+      });
+      newResult.errors = newResult.errors.concat(extResponse.errors);
 
-        // Update overall status.
-        newResult.status = this.getOverallStatus(statuses);
+      // Collect sources and results for batch update if applicable.
+      resultsToUpdate.push(newResult);
+      allNewResults.push(newResult);
 
-        // Collect errors from all gatherers.
-        newResult.errors = this.getOverallErrors(newResult);
-
-        // After each run
-        extResponse = this.runExtensions(extensions, 'afterRun', {
-          test: test,
-          result: newResult,
-        });
-        newResult.errors = newResult.errors.concat(extResponse.errors);
-
-        // Collect sources and results for batch update if applicable.
-        resultsToUpdate.push(newResult);
-        allNewResults.push(newResult);
-
-        // Batch update to the connector if the buffer is full.
-        if (this.batchUpdateBuffer &&
-          resultsToUpdate.length >= this.batchUpdateBuffer) {
-          await this.connector.appendResultList(resultsToUpdate, options);
-          this.log(`DataCollectionFramework::retrieve, batch appends ` +
-            `${resultsToUpdate.length} results.`);
-          resultsToUpdate = [];
-        }
+      // Batch update to the connector if the buffer is full.
+      if (this.batchUpdateBuffer &&
+        resultsToUpdate.length >= this.batchUpdateBuffer) {
+        await this.connector.appendDataList(destDatasetId, resultsToUpdate, options);
+        this.log(`DataGathererFramework::retrieve, batch appends ` +
+          `${resultsToUpdate.length} results.`);
+        resultsToUpdate = [];
       }
     }
 
     // Update the remaining.
-    await this.connector.appendResultList(resultsToUpdate, options);
+    await this.connector.appendDataList(destDatasetId, resultsToUpdate, options);
 
     return allNewResults;
   }
@@ -845,7 +439,6 @@ class DataCollectionFramework {
 
     let newResult = {
       id: nowtime + '-' + test.url || test.origin,
-      type: options.recurring ? TestType.RECURRING : TestType.SINGLE,
       gatherer: test.gatherer,
       status: Status.SUBMITTED,
       label: test.label,
@@ -860,9 +453,10 @@ class DataCollectionFramework {
   }
 
   /**
-   * Return all Test objects.
+   * Return all data rows.
+   * @param {string} datasetId
    * @param {object} options
-   * @return {Array<object>} Test objects.
+   * @return {Array<object>} Row objects.
    *
    * Available options:
    * - filters {Array<string>}: Use `options.filters` to filter
@@ -871,16 +465,17 @@ class DataCollectionFramework {
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
    */
-  async getSources(options) {
+  async getDataList(datasetId, options) {
     options = options || {};
-    let sources = await this.connector.getSourceLIst(options);
-    return tests;
+    let results = await this.connector.getDataList(datasetId, options);
+    return results;
   }
 
   /**
-   * Return all Result objects.
+   * Return all data rows as JSON format.
+   * @param {string} datasetId
    * @param {object} options
-   * @return {Array<object>} Result objects.
+   * @return {Array<object>} Row objects.
    *
    * Available options:
    * - filters {Array<string>}: Use `options.filters` to filter
@@ -889,9 +484,9 @@ class DataCollectionFramework {
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
    */
-  async getResults(options) {
+  async getDataJson(datasetId, options) {
     options = options || {};
-    let results = await this.connector.getResultList(options);
+    let results = await this.connector.getDataList(datasetId, options);
     return results;
   }
 
@@ -912,19 +507,6 @@ class DataCollectionFramework {
     } else {
       return Status.SUBMITTED;
     }
-  }
-
-  /**
-   * Update the next trigger timestamp to a Test.
-   * @param {object} test Test object to run.
-   */
-  updateNextTriggerTimestamp(test) {
-    if (!test.recurring) return;
-
-    let nowtime = Date.now();
-    let frequency = (test.recurring || {}).frequency;
-    let offset = FrequencyInMinutes[frequency.toUpperCase()];
-    test.recurring.nextTriggerTimestamp = offset ? nowtime + offset : '';
   }
 
   /**
@@ -974,4 +556,4 @@ class DataCollectionFramework {
   }
 }
 
-module.exports = DataCollectionFramework;
+module.exports = DataGathererFramework;

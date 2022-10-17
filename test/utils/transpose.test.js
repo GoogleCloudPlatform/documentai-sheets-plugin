@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,22 +20,22 @@ const transpose = require('../../src/utils/transpose');
 
 describe('transpose test', () => {
   it('transposes an 2D array.', async () => {
-    let array = [[1,2,3], [1,2,3]];
+    let array = [[1, 2, 3], [1, 2, 3]];
 
     let newArray = transpose(array);
     expect(newArray).toEqual([
-      [1,1],[2,2],[3,3]
+      [1, 1], [2, 2], [3, 3]
     ]);
   });
 
   it('transposes an 2D array twice and gets its original state.', async () => {
-    let array = [[1,2,3], [1,2,3]];
+    let array = [[1, 2, 3], [1, 2, 3]];
 
     let newArray = transpose(array);
     newArray = transpose(newArray);
 
     expect(newArray).toEqual([
-      [1,2,3], [1,2,3]
+      [1, 2, 3], [1, 2, 3]
     ]);
   });
 });

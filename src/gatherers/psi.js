@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 
 const assert = require('../utils/assert');
 const Status = require('../common/status');
-const {Metrics} = require('../common/metrics');
+const { Metrics } = require('../common/metrics');
 const Gatherer = require('./gatherer');
 
 class PSIGatherer extends Gatherer {
@@ -143,7 +143,7 @@ class PSIGatherer extends Gatherer {
         };
       }
 
-      if(response.statusCode >= 400) {
+      if (response.statusCode >= 400) {
         return {
           status: Status.ERROR,
           statusText: response.statusText,
@@ -202,7 +202,7 @@ class PSIGatherer extends Gatherer {
 
         } catch (e) {
           errors.push(`Unable to assign json.${this.metricsMap[key]} to ` +
-              `metrics: ${e.message}`);
+            `metrics: ${e.message}`);
         }
       });
       return {

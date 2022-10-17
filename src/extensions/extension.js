@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,12 @@
  */
 
 class Extention {
-  constructor(config, envVars) {}
+  constructor(config, envVars) { }
   // Run
-  beforeRun(context, options) {}
-  afterRun(context, options) {}
-  beforeAllRuns(context, options) {}
-  afterAllRuns(context, options) {}
-  // Retrieve
-  beforeRetrieve(context, options) {}
-  afterRetrieve(context, options) {}
-  beforeAllRetrieves(context, options) {}
-  afterAllRetrieves(context, options) {}
+  beforeRun(context, options) { }
+  afterRun(context, options) { }
+  beforeAllRuns(context, options) { }
+  afterAllRuns(context, options) { }
 }
 
 module.exports = Extention;

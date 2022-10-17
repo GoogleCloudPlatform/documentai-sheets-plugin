@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 'use strict';
 
-const {BigQueryHandler} = require('../../src/helpers/gcp-handler');
+const { BigQueryHandler } = require('../../src/helpers/gcp-handler');
 
 describe('BigQueryHandler test', () => {
   it('creates corresponding BigQuery client in Node.js platform.', async () => {
@@ -75,14 +75,14 @@ describe('BigQueryHandler test', () => {
             }, {
               name: 'field-2',
             }
-          ],
+            ],
           },
           jobComplete: true,
           pageToken: getPageToken(),
           rows: [{
-            f: [{v: '202001'}, {v: 123}, {v:456}],
+            f: [{ v: '202001' }, { v: 123 }, { v: 456 }],
           }, {
-            f: [{v: '202002'}, {v: 123}, {v:456}],
+            f: [{ v: '202002' }, { v: 123 }, { v: 456 }],
           }],
         }),
       }

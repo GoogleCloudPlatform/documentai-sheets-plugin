@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,12 @@ class NodeApiHandler extends ApiHandler {
   get(url) {
     try {
       let response = request('GET', url);
-  		return {
+      return {
         statusCode: response.statusCode,
         body: response.getBody().toString(),
       }
     } catch (e) {
-      return  {
+      return {
         statusCode: e.code || 500,
         statusText: e.message,
         error: e,
@@ -48,7 +48,7 @@ class NodeApiHandler extends ApiHandler {
         body: response.getBody().toString(),
       }
     } catch (e) {
-      return  {
+      return {
         statusCode: e.code || 500,
         statusText: e.message,
         error: e,

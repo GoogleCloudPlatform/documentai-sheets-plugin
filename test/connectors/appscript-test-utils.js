@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@ const assert = require('../../src/utils/assert');
 const fakeSheetData = {
   fakeEnvVarsSheetData: [
     ['Name', 'key', 'value'],
-    ['WPT API Key', 'webPageTestApiKey', 'TEST_APIKEY'],
-    ['PSI API Key', 'psiApiKey', 'TEST_PSI_KEY'],
+    ['API Key', 'apiKey', 'TEST_APIKEY'],
     ['GCP Project ID', 'gcpProjectId', 'TEST_PROJECTID'],
   ],
   fakeSystemSheetData: [
@@ -39,23 +38,23 @@ const fakeSheetData = {
   fakeSourcesSheetData: [
     ['', '', '', '', '', '', '', ''],
     ['selected', 'url', 'label', 'recurring.frequency',
-      'recurring.nextTriggerTimestamp', 'gatherer', 'webpagetest.settings.connection',
-      'webpagetest.settings.location'],
-    ['', 'URL', 'Label', 'Frequency', 'Next Trigger Timestamp', 'Audit Platforms', 'WPT Connection', 'WPT Location'],
-    [true, 'google.com', 'Google', 'Daily', null, 'webpagetest', '4G', 'TestLocation'],
-    [false, 'examples.com', 'Example', null, null, 'webpagetest', '3G', 'TestLocation'],
-    [true, 'web.dev', 'Web.Dev', 'Daily', null, 'webpagetest', '3G', 'TestLocation'],
+      'recurring.nextTriggerTimestamp', 'gatherer', 'fake.settings.connection',
+      'fake.settings.location'],
+    ['', 'URL', 'Label', 'Frequency', 'Next Trigger Timestamp', 'Audit Platforms'],
+    [true, 'google.com', 'Google', 'Daily', null, 'fake', '4G', 'TestLocation'],
+    [false, 'examples.com', 'Example', null, null, 'fake', '3G', 'TestLocation'],
+    [true, 'web.dev', 'Web.Dev', 'Daily', null, 'fake', '3G', 'TestLocation'],
   ],
   fakeResultsSheetData: [
     ['', '', '', '', '', ''],
-    ['selected', 'id', 'type', 'status', 'url', 'webpagetest.metrics.SpeedIndex'],
+    ['selected', 'id', 'type', 'status', 'url', 'fake.metrics.SpeedIndex'],
     ['', 'ID', 'Type', 'Status', 'URL', 'WPT SpeedIndex'],
     [true, 'id-1234', 'single', 'Retrieved', 'google.com', 500],
     [false, 'id-5678', 'recurring', 'Retrieved', 'web.dev', 800],
   ],
   fakeEmptyResultsSheetData: [
     ['', '', '', '', '', ''],
-    ['selected', 'id', 'type', 'status', 'url', 'webpagetest.metrics.SpeedIndex'],
+    ['selected', 'id', 'type', 'status', 'url', 'fake.metrics.SpeedIndex'],
     ['', 'ID', 'Type', 'Status', 'URL', 'WPT SpeedIndex'],
   ],
   fakePSISourcesSheetData: [
@@ -151,12 +150,20 @@ const initFakeSheet = (fakeData) => {
   return sheet;
 };
 
+const fakeSheets = {
+  'Settings': initFakeSheet(fakeSheetData.fakeEnvVarsSheetData),
+  'System': initFakeSheet(fakeSheetData.fakeSystemSheetData),
+  'Locations': initFakeSheet(fakeSheetData.fakeLocationsSheetData),
+  'Sources-1': initFakeSheet(fakeSheetData.fakeSourcesSheetData),
+  'Results-1': initFakeSheet(fakeSheetData.fakeResultsSheetData),
+};
+
 const SpreadsheetApp = {
   getActive: () => ({
     getSheetByName: (tabName) => {
-      return {};
+      if (tabName === 'NonExistingTab') return null;
+      return fakeSheets[tabName];
     },
-    getId: () => 'sheet-1234',
   }),
   newDataValidation: () => ({
     requireValueInRange: () => ({
@@ -233,6 +240,7 @@ const UrlFetchApp = {
 module.exports = {
   initFakeSheet,
   fakeSheetData,
+  fakeSheets,
   SpreadsheetApp,
   Session,
   Utilities,

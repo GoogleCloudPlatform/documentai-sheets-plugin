@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ class Metrics {
   set(key, value) {
     let parts = key.split('.');
     let metricKey = key;
-    if (parts.length > 1) metricKey = parts[parts.length -1];
+    if (parts.length > 1) metricKey = parts[parts.length - 1];
 
     if (!MetricKeys.includes(metricKey)) {
       throw new Error(`Metric key "${metricKey}" is not supported.`);

@@ -1,5 +1,5 @@
 /**
- * Copyright 2020 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-const DataCollectionFramework = require('./core');
+const DataGathererFramework = require('./core');
 const argv = require('minimist')(process.argv.slice(2));
 const assert = require('./utils/assert');
 const { NodeHelper } = require('./helpers/node-helper');
@@ -151,7 +151,7 @@ async function begin() {
       resultsPath = resultsPath.slice(resultsPath.indexOf(':') + 1);;
     }
 
-    // Construct overall DataCollectionFramework config and individual connector's config.
+    // Construct overall DataGathererFramework config and individual connector's config.
     coreConfig = {
       sources: {
         connector: sourcesConnector,
@@ -174,8 +174,8 @@ async function begin() {
     console.log(JSON.stringify(coreConfig, null, 2));
   }
 
-  // Create DataCollectionFramework instance.
-  let core = new DataCollectionFramework(coreConfig);
+  // Create DataGathererFramework instance.
+  let core = new DataGathererFramework(coreConfig);
 
   let options = {
     filters: filters,
