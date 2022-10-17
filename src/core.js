@@ -102,6 +102,10 @@ class DataGathererFramework {
             ExtensionClass = require('./extensions/appscript-extension');
             break;
 
+          case 'docai':
+            ExtensionClass = require('./extensions/docai-extension');
+            break;
+
           default:
             try {
               ExtensionClass = require('./extensions/' + extension);

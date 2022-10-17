@@ -90,7 +90,7 @@ class AppScriptConnector extends Connector {
       skipColumns = tabConfig.skipRows;
     }
 
-    let propertyLookup = data[tabConfig.propertyLookupRow - 1];
+    let propertyLookup = data[tabConfig.propertyLookup - 1];
     data = data.slice(skipRows, data.length);
 
     let items = [];
@@ -232,13 +232,13 @@ class AppScriptConnector extends Connector {
 
     if (tabConfig.dataAxis === DataAxis.ROW) {
       let data = sheet.getRange(
-        tabConfig.propertyLookupRow, skipColumns + 1,
+        tabConfig.propertyLookup, skipColumns + 1,
         1, sheet.getLastColumn() - skipColumns).getValues();
       propertyLookup = data[0];
 
     } else {
       let data = sheet.getRange(
-        skipRows + 1, tabConfig.propertyLookupRow,
+        skipRows + 1, tabConfig.propertyLookup,
         sheet.getLastRow() - skipRows, 1).getValues();
       propertyLookup = data.map(x => x[0]);
     }

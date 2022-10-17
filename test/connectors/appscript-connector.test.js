@@ -30,31 +30,31 @@ let connectorConfig = {
   tabs: {
     'Sources-1': {
       dataAxis: 'row',
-      propertyLookupRow: 2, // Starts at 1
+      propertyLookup: 2, // Starts at 1
       skipColumns: 0,
       skipRows: 3,
     },
     'Sources-2': {
       dataAxis: 'row',
-      propertyLookupRow: 2, // Starts at 1
+      propertyLookup: 2, // Starts at 1
       skipColumns: 0,
       skipRows: 3,
     },
     'Results-1': {
       dataAxis: 'row',
-      propertyLookupRow: 2, // Starts at 1
+      propertyLookup: 2, // Starts at 1
       skipColumns: 0,
       skipRows: 3,
     },
     'Settings': {
       dataAxis: 'column',
-      propertyLookupRow: 2, // Starts at 1
+      propertyLookup: 2, // Starts at 1
       skipColumns: 2,
       skipRows: 1,
     },
     'System': {
       dataAxis: 'column',
-      propertyLookupRow: 2, // Starts at 1
+      propertyLookup: 2, // Starts at 1
       skipColumns: 2,
       skipRows: 1,
     },
