@@ -22,7 +22,7 @@ const Status = require('../common/status');
 const setObject = require('../utils/set-object');
 const transpose = require('../utils/transpose');
 const Connector = require('./connector');
-const { AppScriptHelper, SystemVars } = require('../helpers/appscript-helper');
+const { SheetsHelper, SystemVars } = require('../helpers/sheets-helper');
 
 const DataAxis = {
   ROW: 'row',
@@ -32,10 +32,10 @@ const DataAxis = {
 /**
  * the connector handles read and write actions with GoogleSheets as a data
  * store. This connector works together with
- * `src/extensions/appscript-extensions.js` and
- * `src/helpers/appscript-helper.js`.
+ * `src/extensions/sheets-extensions.js` and
+ * `src/helpers/sheets-helper.js`.
  */
-class AppScriptConnector extends Connector {
+class SheetsConnector extends Connector {
   /**
    * constructor - Initilize the instance  with given config object and
    * singleton ApiHandler instance. The config object is a sub-property from
@@ -108,7 +108,7 @@ class AppScriptConnector extends Connector {
       }
 
       // Add metadata for GoogleSheets.
-      newItem.appscript = {
+      newItem.sheets = {
         rowIndex: i + tabConfig.skipRows + 1,
       };
       items.push(newItem);
@@ -126,13 +126,13 @@ class AppScriptConnector extends Connector {
    */
   updateDataList(tabId, newItems, options) {
     options = options || {};
-    let appscript = options.appscript || {};
+    let sheets = options.sheets || {};
 
     // If tabId is not specified, use the default Sources tabId.
     this.updateDataListExec(tabId, newItems,
       (item, rowIndex) => {
-        // item.appscript.rowIndex in each item is added in getDataList().
-        return item.appscript.rowIndex;
+        // item.sheets.rowIndex in each item is added in getDataList().
+        return item.sheets.rowIndex;
       } /* rowIndexFunc */);
   }
 
@@ -141,13 +141,13 @@ class AppScriptConnector extends Connector {
    * @param  {Array<object>} newItems Array of new items
    *
    * Available options:
-   * - options.appscript.spreadArrayProperty {string}: To specify a property
+   * - options.sheets.spreadArrayProperty {string}: To specify a property
    *     key for spreading an array of metrics into multiple rows of single
    *     metric object.
    */
   appendDataList(tabId, newItems, options) {
     options = options || {};
-    let appscript = options.appscript || {};
+    let sheets = options.sheets || {};
 
     // Use the last row index as base for appending items.
     let lastRowIndex = this.getTabLastRow(tabId) + 1;
@@ -387,7 +387,7 @@ class AppScriptConnector extends Connector {
   getEnvVars() {
     let envVars = this.getDataList(this.config.envVarsTabId);
     envVars = envVars ? envVars[0] : null;
-    delete envVars['appscript'];
+    delete envVars['sheets'];
     return envVars;
   }
 
@@ -465,7 +465,7 @@ class AppScriptConnector extends Connector {
    * initUserTimeZone - Set the user timezone to System tab.
    */
   initUserTimeZone() {
-    let userTimeZone = AppScriptHelper.getUserTimeZone();
+    let userTimeZone = SheetsHelper.getUserTimeZone();
     this.setSystemVar('USER_TIMEZONE', userTimeZone);
   }
 
@@ -478,4 +478,4 @@ class AppScriptConnector extends Connector {
   }
 }
 
-module.exports = AppScriptConnector;
+module.exports = SheetsConnector;

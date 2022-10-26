@@ -17,9 +17,9 @@
 'use strict';
 
 const fs = require('fs');
-const DataGathererFramework = require('../build/appscript-bundle');
+const DataGathererFramework = require('../build/core-bundle');
 const { initFakeSheet, fakeSheetData, SpreadsheetApp, Session, Utilities,
-  ScriptApp, Logger, Browser, UrlFetchApp } = require('../test/connectors/appscript-test-utils');
+  ScriptApp, Logger, Browser, UrlFetchApp } = require('../test/connectors/sheets-test-utils');
 
 let core = null;
 let fakeSheets = {};
@@ -41,7 +41,7 @@ global.Logger = Logger;
 global.Browser = Browser;
 global.UrlFetchApp = UrlFetchApp;
 
-describe('DataGathererFramework bundle for AppScript', () => {
+describe('DataGathererFramework bundle for Sheets', () => {
   beforeEach(() => {
     fakeSheets = {
       'Settings': initFakeSheet(fakeSheetData.fakeEnvVarsSheetData),
@@ -54,12 +54,12 @@ describe('DataGathererFramework bundle for AppScript', () => {
     };
 
     let coreConfig = {
-      helper: 'appscript',
+      helper: 'sheets',
       extensions: [
-        'appscript',
+        'sheets',
       ],
-      // specific configs below
-      appscript: {
+      // Connector-specific configs below
+      sheets: {
         envVarsTabId: 'Settings',
         systemTabId: 'System',
         tabs: {
@@ -114,7 +114,7 @@ describe('DataGathererFramework bundle for AppScript', () => {
     expect(core).not.toBe(null);
   });
 
-  it('initializes DataGathererFramework for AppScript via connector init', () => {
+  it('initializes DataGathererFramework for Sheets via connector init', () => {
     core.connector.apiHandler.fetch = () => {
       return {
         statusCode: 200,

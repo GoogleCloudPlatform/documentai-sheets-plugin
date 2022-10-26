@@ -55,12 +55,12 @@ class DataGathererFramework {
     this.overallGathererNames = ['docai'];
 
     // Initialize helper. Use Node helper by default.
-    coreConfig.helper = coreConfig.helper || 'appscript';
+    coreConfig.helper = coreConfig.helper || 'sheets';
     this.log(`Use helper: ${coreConfig.helper}`);
     switch (coreConfig.helper.toLowerCase()) {
-      case 'appscript':
-        let { AppScriptApiHandler } = require('./helpers/appscript-helper');
-        this.apiHandler = new AppScriptApiHandler();
+      case 'sheets':
+        let { SheetsApiHandler } = require('./helpers/sheets-helper');
+        this.apiHandler = new SheetsApiHandler();
         break;
 
       case 'fake':
@@ -80,7 +80,7 @@ class DataGathererFramework {
         getEnvVars: () => { },
       };
     } else {
-      this.connector = this.getConnector(coreConfig["appscript"]);
+      this.connector = this.getConnector(coreConfig["sheets"]);
     }
     this.envVars = this.connector.getEnvVars();
 
@@ -98,8 +98,8 @@ class DataGathererFramework {
         extConfig.debug = this.debug;
 
         switch (extension) {
-          case 'appscript':
-            ExtensionClass = require('./extensions/appscript-extension');
+          case 'sheets':
+            ExtensionClass = require('./extensions/sheets-extension');
             break;
 
           case 'docai':
@@ -136,7 +136,7 @@ class DataGathererFramework {
    * @return {object} Connector instance.
    */
   getConnector(connectorConfig) {
-    let ConnectorClass = require('./connectors/appscript-connector');
+    let ConnectorClass = require('./connectors/sheets-connector');
     return new ConnectorClass(connectorConfig, this.apiHandler);
   }
 

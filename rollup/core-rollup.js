@@ -15,13 +15,13 @@
  */
 
 // Connectors
-require('../src/connectors/appscript-connector');
+require('../src/connectors/sheets-connector');
 
 // Extensions
-require('../src/extensions/appscript-extension');
+require('../src/extensions/sheets-extension');
 
 // Helpers
-require('../src/helpers/appscript-helper');
+require('../src/helpers/sheets-helper');
 
 // Core
 const Core = require('../src/core');

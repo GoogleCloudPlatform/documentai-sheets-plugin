@@ -16,11 +16,11 @@
 
 'use strict';
 
-const AppScriptConnector = require('../../src/connectors/appscript-connector');
+const SheetsConnector = require('../../src/connectors/sheets-connector');
 const assert = require('../../src/utils/assert');
 const setObject = require('../../src/utils/set-object');
 const Status = require('../../src/common/status');
-const { initFakeSheet, fakeSheets, fakeSheetData, SpreadsheetApp } = require('./appscript-test-utils');
+const { initFakeSheet, fakeSheets, fakeSheetData, SpreadsheetApp } = require('./sheets-test-utils');
 
 global.SpreadsheetApp = SpreadsheetApp;
 
@@ -77,7 +77,7 @@ let fakeSources = [
         location: 'TestLocation',
       }
     },
-    appscript: {
+    sheets: {
       rowIndex: 4,
     }
   },
@@ -96,7 +96,7 @@ let fakeSources = [
         location: 'TestLocation',
       }
     },
-    appscript: {
+    sheets: {
       rowIndex: 5,
     }
   },
@@ -115,7 +115,7 @@ let fakeSources = [
         location: 'TestLocation',
       }
     },
-    appscript: {
+    sheets: {
       rowIndex: 6,
     }
   }
@@ -133,7 +133,7 @@ let fakeResults = [
         SpeedIndex: 500,
       },
     },
-    appscript: {
+    sheets: {
       rowIndex: 4,
     }
   },
@@ -148,7 +148,7 @@ let fakeResults = [
         SpeedIndex: 800,
       },
     },
-    appscript: {
+    sheets: {
       rowIndex: 5,
     }
   },
@@ -159,12 +159,12 @@ let connector;
 
 /* eslint-env jest */
 
-describe('AppScriptConnector Sources tab', () => {
+describe('SheetsConnector Sources tab', () => {
   beforeEach(() => {
     // Overrides properties for testing.
     fakeSheets['Sources-1'] = initFakeSheet(fakeSheetData.fakeSourcesSheetData);
     fakeSheets['Sources-2'] = initFakeSheet(fakeSheetData.fakeSourcesSheetData);
-    connector = new AppScriptConnector(connectorConfig, {} /* apiHandler */);
+    connector = new SheetsConnector(connectorConfig, {} /* apiHandler */);
   });
 
   it('returns all sources from a specific sheet', async () => {
@@ -214,7 +214,7 @@ describe('AppScriptConnector Sources tab', () => {
 
   it('filters sources based on rowIndex', async () => {
     let sources = connector.getDataList('Sources-1', {
-      filters: ['appscript.rowIndex===6']
+      filters: ['sheets.rowIndex===6']
     });
 
     expect(sources).toEqual([
@@ -223,10 +223,10 @@ describe('AppScriptConnector Sources tab', () => {
   });
 });
 
-describe('AppScriptConnector Results tab', () => {
+describe('SheetsConnector Results tab', () => {
   beforeEach(() => {
     fakeSheets['Results-1'] = initFakeSheet(fakeSheetData.fakeResultsSheetData);
-    connector = new AppScriptConnector(connectorConfig, {} /* apiHandler */);
+    connector = new SheetsConnector(connectorConfig, {} /* apiHandler */);
   });
 
   it('returns list of results from the Results sheet', async () => {
@@ -289,7 +289,7 @@ describe('AppScriptConnector Results tab', () => {
           SpeedIndex: 500,
         },
       },
-      appscript: {
+      sheets: {
         rowIndex: 6,
       }
     };
@@ -314,7 +314,7 @@ describe('AppScriptConnector Results tab', () => {
           SpeedIndex: 800,
         },
       },
-      appscript: {
+      sheets: {
         rowIndex: 5,
       }
     };
@@ -336,11 +336,11 @@ describe('AppScriptConnector Results tab', () => {
   });
 });
 
-describe('AppScriptConnector System tab', () => {
+describe('SheetsConnector System tab', () => {
   beforeEach(() => {
     // Overrides properties for testing.
     fakeSheets['System'] = initFakeSheet(fakeSheetData.fakeSystemSheetData);
-    connector = new AppScriptConnector(connectorConfig, {} /* apiHandler */);
+    connector = new SheetsConnector(connectorConfig, {} /* apiHandler */);
   });
 
   it('returns a specific system variable from the System sheet', async () => {
@@ -355,11 +355,11 @@ describe('AppScriptConnector System tab', () => {
   });
 });
 
-describe('AppScriptConnector Locations tab', () => {
+describe('SheetsConnector Locations tab', () => {
   beforeEach(() => {
     // Overrides properties for testing.
     fakeSheets['Locations'] = initFakeSheet(fakeSheetData.fakeLocationsSheetData);
-    connector = new AppScriptConnector(connectorConfig, {} /* apiHandler */);
+    connector = new SheetsConnector(connectorConfig, {} /* apiHandler */);
   });
 
   it('updates locations to LocationsTab', async () => {
@@ -385,14 +385,14 @@ describe('AppScriptConnector Locations tab', () => {
   });
 });
 
-describe('AppScriptConnector additional functions', () => {
+describe('SheetsConnector additional functions', () => {
   beforeEach(() => {
     // Overrides properties for testing.
     fakeSheets['EnvVars'] = initFakeSheet(fakeSheetData.fakeEnvVarsSheetData);
     fakeSheets['System'] = initFakeSheet(fakeSheetData.fakeSystemSheetData);
     fakeSheets['Sources-1'] = initFakeSheet(fakeSheetData.fakeSourcesSheetData);
     fakeSheets['Results-1'] = initFakeSheet(fakeSheetData.fakeResultsSheetData);
-    connector = new AppScriptConnector(connectorConfig, {} /* apiHandler */);
+    connector = new SheetsConnector(connectorConfig, {} /* apiHandler */);
   });
 
   it('returns property lookup values for sheet with DataAxis.ROW', async () => {

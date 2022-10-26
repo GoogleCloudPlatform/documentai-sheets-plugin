@@ -6,9 +6,9 @@ import banner from 'rollup-plugin-banner';
 import npmPackageJson from './package.json';
 
 export default [{
-  input: 'rollup/appscript.js',
+  input: 'rollup/core-rollup.js',
   output: {
-    file: 'build/appscript-bundle.js',
+    file: 'build/core-bundle.js',
     format: 'cjs',
     esModule: false,
   },
@@ -21,9 +21,7 @@ export default [{
         'fs',
         'path',
         'google-spreadsheet',
-        './connectors/json-connector',
-        './connectors/csv-connector',
-        './connectors/sheets-connector',
+        // './connectors/sheets-connector',
         './helpers/node-helper',
         './helpers/gcp-handler',
         '@google-cloud/bigquery',

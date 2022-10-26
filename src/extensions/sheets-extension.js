@@ -20,7 +20,7 @@ const assert = require('../utils/assert');
 const Status = require('../common/status');
 const setObject = require('../utils/set-object');
 const Extension = require('./extension');
-const { AppScriptHelper, SystemVars } = require('../helpers/appscript-helper');
+const { SheetsHelper, SystemVars } = require('../helpers/sheets-helper');
 
 /**
  * The extension for providing additional actions for AWP on AppScript.
@@ -33,9 +33,9 @@ const { AppScriptHelper, SystemVars } = require('../helpers/appscript-helper');
  * - After all retrieves, delete trigger for
  *     retreiving results.
  */
-class AppScriptExtension extends Extension {
+class SheetsExtension extends Extension {
   /**
-   * @param {object} config The config for this extension, as the "appscript"
+   * @param {object} config The config for this extension, as the "sheets"
    *     property in awpConfig loaded from src/awp-core.js.
    */
   constructor(config, envVars) {
@@ -46,7 +46,7 @@ class AppScriptExtension extends Extension {
     this.envVars = envVars;
     this.connector = config.connector;
     this.apiHandler = config.apiHandler;
-    this.spreadsheetId = AppScriptHelper.getSpreadsheetId();
+    this.spreadsheetId = SheetsHelper.getSpreadsheetId();
     this.locations = null;
     this.debug = config.debug || false;
     this.userTimeZone = envVars['userTimezone'] || 'America/New_York';
@@ -77,12 +77,12 @@ class AppScriptExtension extends Extension {
     if (result) {
       // Format createdDatetime
       if (result.createdTimestamp) {
-        result.createdDatetime = AppScriptHelper.getFormattedDate(
+        result.createdDatetime = SheetsHelper.getFormattedDate(
           new Date(result.createdTimestamp), this.userTimeZone, 'MM/dd/YYYY HH:mm:ss');
       }
       // Format modifiedDatetime
       if (result.modifiedTimestamp) {
-        result.modifiedDatetime = AppScriptHelper.getFormattedDate(
+        result.modifiedDatetime = SheetsHelper.getFormattedDate(
           new Date(result.modifiedTimestamp), this.userTimeZone, 'MM/dd/YYYY HH:mm:ss');
       }
 
@@ -109,12 +109,12 @@ class AppScriptExtension extends Extension {
   }
 
   /**
-   * Returns the AppScriptHelper for unit test purpose.
+   * Returns the SheetsHelper for unit test purpose.
    * @return {object}
    */
-  getAppScriptHelper() {
-    return AppScriptHelper;
+  getSheetsHelper() {
+    return SheetsHelper;
   }
 }
 
-module.exports = AppScriptExtension;
+module.exports = SheetsExtension;

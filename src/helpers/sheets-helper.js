@@ -16,7 +16,7 @@
 
 const ApiHandler = require('./api-handler');
 
-class AppScriptApiHandler extends ApiHandler {
+class SheetsApiHandler extends ApiHandler {
   fetch(url) {
     return this.get(url);
   }
@@ -86,7 +86,7 @@ const SystemVars = {
   LAST_INIT_TIMESTAMP: 'LAST_INIT_TIMESTAMP',
 }
 
-const AppScriptHelper = {
+const SheetsHelper = {
   /**
    * Encrypt a string to MD5.
    * @param {string} message
@@ -183,7 +183,7 @@ const AppScriptHelper = {
   getClientEmail: () => {
     //Set email
     let clientEmail = Session.getActiveUser().getEmail();
-    return clientEmail ? AppScriptHelper.toMD5(clientEmail) : 'anonymous';
+    return clientEmail ? SheetsHelper.toMD5(clientEmail) : 'anonymous';
   },
 
   /**
@@ -218,8 +218,8 @@ const AppScriptHelper = {
 }
 
 module.exports = {
-  AppScriptApiHandler,
-  AppScriptHelper,
+  SheetsApiHandler,
+  SheetsHelper,
   SystemVars,
   TabRole,
 };
