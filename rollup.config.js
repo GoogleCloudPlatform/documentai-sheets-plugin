@@ -25,7 +25,6 @@ export default [{
         './helpers/node-helper',
         './helpers/gcp-handler',
         '@google-cloud/bigquery',
-        '../../test/fakedata/psi-response.json', //FIXME: use exclude.
       ],
     }),
     babel({
