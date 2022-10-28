@@ -51,6 +51,8 @@ describe('DataGathererFramework bundle for Sheets', () => {
       'Results-1': initFakeSheet(fakeSheetData.fakeEmptyResultsSheetData),
       'Sources-2': initFakeSheet(fakeSheetData.fakeSourcesSheetData),
       'Results-2': initFakeSheet(fakeSheetData.fakeEmptyResultsSheetData),
+      'Results-DocKeys': initFakeSheet(fakeSheetData.fakeEmptyResultsSheetDataDocAIKeys),
+      'Results-DocEntities': initFakeSheet(fakeSheetData.fakeEmptyResultsSheetDataDocAI),
     };
 
     let coreConfig = {
@@ -58,6 +60,7 @@ describe('DataGathererFramework bundle for Sheets', () => {
       extensions: [
         'sheets',
       ],
+      gatherers: ['docai'],
       // Connector-specific configs below
       sheets: {
         envVarsTabId: 'Settings',
@@ -82,6 +85,18 @@ describe('DataGathererFramework bundle for Sheets', () => {
             skipRows: 3,
           },
           'Results-2': {
+            dataAxis: 'row',
+            propertyLookup: 2, // Starts at 1
+            skipColumns: 0,
+            skipRows: 3,
+          },
+          'Results-DocKeys': {
+            dataAxis: 'row',
+            propertyLookup: 2, // Starts at 1
+            skipColumns: 0,
+            skipRows: 3,
+          },
+          'Results-DocEntities': {
             dataAxis: 'row',
             propertyLookup: 2, // Starts at 1
             skipColumns: 0,
@@ -175,5 +190,62 @@ describe('DataGathererFramework bundle for Sheets', () => {
     expect(resultsData1[3][4]).toEqual('google.com');
     expect(resultsData1[4][3]).toEqual('Retrieved');
     expect(resultsData1[4][4]).toEqual('web.dev');
+  });
+
+  it('submits source rows and override results to specific tabs', async () => {
+    let resultsData1 = fakeSheets['Results-1'].fakeData;
+    console.log(resultsData1);
+
+    // Running sources and writing to Results-1 tab.
+    await core.run({
+      srcDatasetId: 'Sources-1',
+      destDatasetId: 'Results-1',
+    });
+    // Ensure there are two additional rows in the Results tab.
+    expect(resultsData1.length).toEqual(6);
+
+    // Running sources and writing to Results-1 tab.
+    await core.run({
+      srcDatasetId: 'Sources-1',
+      destDatasetId: 'Results-1',
+    });
+    expect(resultsData1.length).toEqual(9);
+
+    // Running sources and writing to Results-1 tab.
+    await core.run({
+      srcDatasetId: 'Sources-1',
+      destDatasetId: 'Results-1',
+      overrideResults: true,
+    });
+    expect(resultsData1.length).toEqual(6);
+  });
+
+  it('retrieve JSON from system tab', async () => {
+    // Running sources and writing to Results-1 tab.
+    let jsonData = await core.connector.getDataJson('Settings');
+
+    expect(jsonData).toEqual({
+      "apiKey": "TEST_APIKEY",
+      "gcpProjectId": "TEST_PROJECTID",
+      "sheets": { "rowIndex": 2 }
+    });
+  });
+
+  it('submits DocAI source json and writes DocAI parsing results to specific tab', async () => {
+    let jsonData = require('./fixtures/docai_response.json');
+
+    await core.run({
+      gatherer: ['docai'],
+      srcData: jsonData,
+      destDatasetId: 'Results-DocKeys',
+      docai: {
+        fieldKeyOnly: true,
+      }
+    });
+
+    let resultDataDocAI = fakeSheets['Results-DocEntities'].fakeData;
+    // console.log(resultDataDocAI)
+
+    // expect(resultDataDocAI).toEqual(null);
   });
 });

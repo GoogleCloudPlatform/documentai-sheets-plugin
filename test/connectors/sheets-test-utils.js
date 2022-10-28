@@ -57,16 +57,19 @@ const fakeSheetData = {
     ['selected', 'id', 'type', 'status', 'fake.url', 'fake.metrics.SpeedIndex'],
     ['', 'ID', 'Type', 'Status', 'URL', 'WPT SpeedIndex'],
   ],
-  fakeEmptyPSIResultsSheetData: [
-    ['', '', '', '', '', ''],
-    ['selected', 'id', 'type', 'status', 'url', 'psi.metrics.FCP'],
-    ['', 'ID', 'Type', 'Status', 'URL', 'PSI FCP'],
+  fakeEmptyResultsSheetDataDocAIKeys: [
+    ['', ''],
+    ['key', 'newKey'],
+    ['Field Name', 'New Field Name'],
+  ],
+  fakeEmptyResultsSheetDataDocAI: [
+    ['', '', '', '', '', '', ''],
+    ['selected', 'id', 'type', 'status', 'docai.data.name', 'docai.data.address', 'docai.data.phone'],
+    ['', 'ID', 'Type', 'Status', 'Name', 'Address', 'Phone'],
   ],
 }
 
-const initFakeSheet = (fakeData) => {
-  let sheet = {};
-
+const initSheetData = (fakeData) => {
   // Backfill rows with non-consistent length of cells.
   let maxColumnLength = Math.max(...fakeData.map(row => row.length));
   fakeData.forEach(row => {
@@ -74,7 +77,13 @@ const initFakeSheet = (fakeData) => {
       row.push('');
     }
   });
-  sheet.fakeData = [...fakeData];
+  return [...fakeData];
+}
+
+const initFakeSheet = (fakeData) => {
+  let sheet = {};
+
+  sheet.fakeData = initSheetData(fakeData)
   sheet.getDataRange = () => {
     return {
       getValues: () => {
@@ -111,6 +120,7 @@ const initFakeSheet = (fakeData) => {
       getLastRow: () => {
         return sheet.fakeData.length;
       },
+      clear: () => { },
     }
   };
   sheet.getMaxRows = () => {
@@ -131,6 +141,9 @@ const initFakeSheet = (fakeData) => {
     }
     sheet.fakeData = newFakeData;
   };
+  sheet.insertRowAfter = (row) => { };
+  sheet.setRowHeight = (height) => { };
+
   sheet.setConditionalFormatRules = jest.fn();
   return sheet;
 };

@@ -158,6 +158,12 @@ class SheetsConnector extends Connector {
     } /* rowIndexFunc */);
   }
 
+  getDataJson(tabId, options) {
+    let data = this.getDataList(tabId, options);
+    if (data) return data[0];
+    else return null;
+  }
+
   /**
    * getRowRange - The helper function get the GoogleSheets Range object for the
    * entire row with given row index.

@@ -229,8 +229,16 @@ class DataGathererFramework {
     extResponse = this.runExtensions(extensions, 'beforeAllRuns', { sources: sources }, options);
     overallErrors = overallErrors.concat(extResponse.errors);
 
+    // Clean up list if overrideResults.
+    if (overrideResults) {
+      console.log('clearDataList.....' + options['destDatasetId']);
+      this.connector.clearDataList(options['destDatasetId']);
+    }
+
     // Run gatherer.
     let newResults = await this.execute(options['destDatasetId'], sources, options);
+
+    console.log(newResults);
 
     // Collect all errors.
     newResults.forEach(result => {

@@ -134,6 +134,9 @@ class FakeConnector extends Connector {
       this.results = this.results.concat(newItems);
     }
   }
+  clearDataList(datasetId) {
+    this.results = [];
+  }
 }
 
 class FakeGatherer extends Gatherer {
@@ -416,5 +419,32 @@ describe('DataGathererFramework with fake modules', () => {
     };
     errors = core.getOverallErrors(result);
     expect(errors.length).toBe(0);
+  });
+
+  it('override results with overrideResults flag', async () => {
+    let results;
+    core.connector.sources = generateFakeSources(1);
+    await core.run({
+      srcDatasetId: 'Sources-1',
+      destDatasetId: 'Results-1',
+    });
+
+    results = await core.getDataList('Results-1');
+    expect(results.length).toEqual(1);
+
+    await core.run({
+      srcDatasetId: 'Sources-1',
+      destDatasetId: 'Results-1',
+    });
+    results = await core.getDataList('Results-1');
+    expect(results.length).toEqual(2);
+
+    await core.run({
+      srcDatasetId: 'Sources-1',
+      destDatasetId: 'Results-1',
+      overrideResults: true,
+    });
+    results = await core.getDataList('Results-1');
+    expect(results.length).toEqual(1);
   });
 });

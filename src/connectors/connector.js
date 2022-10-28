@@ -22,6 +22,7 @@ class Connector {
     this.debug = config.debug;
   }
   getDataList(tabId, options) { }
+  getDataJson(tabId, options) { }
   updateDataList(tabId, newItems, options) { }
   appenddataList(tabId, newItems, options) { }
   clearDataList(tabId) { }
