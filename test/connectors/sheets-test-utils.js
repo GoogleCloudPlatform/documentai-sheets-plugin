@@ -64,7 +64,7 @@ const fakeSheetData = {
   ],
   fakeEmptyResultsSheetDataDocAIEntities: [
     ['', '', '', '', '', '', ''],
-    ['selected', 'id', 'status', 'docai.data["First Name"].value', 'docai.data["Last Name"].value', 'docai.data["Social Security Number:"].value', 'docai.data["Mailing Address (No., Street, Apt., P.O. Box)"].value'],
+    ['selected', 'id', 'status', 'docai.data["First Name"].value', 'docai.data["Last Name"].value', 'docai.data["Social Security Number:"].value', 'docai.data.address.value'],
     ['', 'ID', 'Status', 'First Name', 'Last Name', 'Social Security Number', 'Address'],
   ],
 }

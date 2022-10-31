@@ -270,7 +270,28 @@ describe('DataGathererFramework bundle for Sheets', () => {
     expect(docEntityData[3][3]).toEqual('Adam');
     expect(docEntityData[3][4]).toEqual('Darker');
     expect(docEntityData[3][5]).toEqual('999-99-9999');
-    expect(docEntityData[3][6]).toEqual('298 Stephen Circle Apt. 118 Deggyburgh, NM 01894');
   });
 
+  it('submits DocAI source json and and remap DocAI keys', async () => {
+    let jsonData = require('./fixtures/docai_response.json');
+
+    await core.run({
+      gatherer: ['docai'],
+      srcData: jsonData,
+      destDatasetId: 'Results-DocEntities',
+      overrideResults: true,
+      docai: {
+        keyMap: {
+          'Mailing Address (No., Street, Apt., P.O. Box)': 'address',
+        }
+      },
+    });
+
+    let docEntityData = fakeSheets['Results-DocEntities'].fakeData;
+    expect(docEntityData.length).toEqual(4);
+    expect(docEntityData[3][3]).toEqual('Adam');
+    expect(docEntityData[3][4]).toEqual('Darker');
+    expect(docEntityData[3][5]).toEqual('999-99-9999');
+    expect(docEntityData[3][6]).toEqual('298 Stephen Circle Apt. 118 Deggyburgh, NM 01894');
+  });
 });
