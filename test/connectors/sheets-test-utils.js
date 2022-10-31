@@ -62,10 +62,10 @@ const fakeSheetData = {
     ['docai.data.key', 'docai.data.newKey'],
     ['Field Name', 'New Field Name'],
   ],
-  fakeEmptyResultsSheetDataDocAI: [
+  fakeEmptyResultsSheetDataDocAIEntities: [
     ['', '', '', '', '', '', ''],
-    ['selected', 'id', 'type', 'status', 'docai.data.name', 'docai.data.address', 'docai.data.phone'],
-    ['', 'ID', 'Type', 'Status', 'Name', 'Address', 'Phone'],
+    ['selected', 'id', 'status', 'docai.data["First Name"].value', 'docai.data["Last Name"].value', 'docai.data["Social Security Number:"].value', 'docai.data["Mailing Address (No., Street, Apt., P.O. Box)"].value'],
+    ['', 'ID', 'Status', 'First Name', 'Last Name', 'Social Security Number', 'Address'],
   ],
 }
 

@@ -52,7 +52,7 @@ describe('DataGathererFramework bundle for Sheets', () => {
       'Sources-2': initFakeSheet(fakeSheetData.fakeSourcesSheetData),
       'Results-2': initFakeSheet(fakeSheetData.fakeEmptyResultsSheetData),
       'Results-DocKeys': initFakeSheet(fakeSheetData.fakeEmptyResultsSheetDataDocAIKeys),
-      'Results-DocEntities': initFakeSheet(fakeSheetData.fakeEmptyResultsSheetDataDocAI),
+      'Results-DocEntities': initFakeSheet(fakeSheetData.fakeEmptyResultsSheetDataDocAIEntities),
     };
 
     let coreConfig = {
@@ -253,4 +253,24 @@ describe('DataGathererFramework bundle for Sheets', () => {
     expect(fieldKeysData[4][0]).toEqual('Year');
     expect(fieldKeysData[5][0]).toEqual('Social Security Number:');
   });
+
+  it('submits DocAI source json and writes DocAI result rows to specific tab', async () => {
+    let jsonData = require('./fixtures/docai_response.json');
+
+    await core.run({
+      gatherer: ['docai'],
+      srcData: jsonData,
+      destDatasetId: 'Results-DocEntities',
+      overrideResults: true,
+      docai: {},
+    });
+
+    let docEntityData = fakeSheets['Results-DocEntities'].fakeData;
+    expect(docEntityData.length).toEqual(4);
+    expect(docEntityData[3][3]).toEqual('Adam');
+    expect(docEntityData[3][4]).toEqual('Darker');
+    expect(docEntityData[3][5]).toEqual('999-99-9999');
+    expect(docEntityData[3][6]).toEqual('298 Stephen Circle Apt. 118 Deggyburgh, NM 01894');
+  });
+
 });

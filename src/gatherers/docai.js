@@ -102,11 +102,7 @@ class DocaiGatherer extends Gatherer {
           });
         });
       } else {
-        outputData = {
-          name: 'test',
-          address: 'test-address',
-          phone: 'phone',
-        };
+        outputData = sourceData;
       }
 
       return {

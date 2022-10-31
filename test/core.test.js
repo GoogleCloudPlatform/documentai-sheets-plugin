@@ -482,5 +482,4 @@ describe('DataGathererFramework with fake modules', () => {
     expect(results[0].fake.data.key).toEqual('test1');
     expect(results[1].fake.data.key).toEqual('test2');
   });
-
 });
