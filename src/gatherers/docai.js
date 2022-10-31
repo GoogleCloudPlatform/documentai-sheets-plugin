@@ -32,11 +32,10 @@ class DocaiGatherer extends Gatherer {
     this.apiHandler = apiHandler;
   };
 
-  getDocumentEntities(jsonData, options) {
-    document = jsonData.document;
-
+  getDocumentEntities(jsonData) {
+    let document = jsonData.document;
     let formFields = [];
-    document.pages.forEach(page => {
+    (document.pages || []).forEach(page => {
       formFields = formFields.concat(page.formFields);
     })
 
@@ -87,20 +86,45 @@ class DocaiGatherer extends Gatherer {
   }
 
   run(source, options) {
-    let errors = [];
+    try {
+      let errors = [];
+      let fieldKeyOnly = (options.docai || {}).fieldKeyOnly;
+      let outputData = {};
+      let sourceData = this.getDocumentEntities(source);
 
-    // let jsonData = require('../../examples/docai_response.json'); //(with path)
+      if (fieldKeyOnly) {
+        outputData = [];
 
-    return {
-      status: Status.RETRIEVED,
-      statusText: 'Success',
-      metadata: {},
-      data: {
-        name: 'test',
-        address: 'test-address',
-        phone: 'phone',
-      },
-      errors: errors,
+        Object.keys(sourceData).forEach(key => {
+          outputData.push({
+            key: key,
+            newKey: null,
+          });
+        });
+      } else {
+        outputData = {
+          name: 'test',
+          address: 'test-address',
+          phone: 'phone',
+        };
+      }
+
+      return {
+        status: Status.RETRIEVED,
+        statusText: 'Success',
+        metadata: {},
+        data: outputData,
+        errors: errors,
+      }
+
+    } catch (e) {
+      console.error(e);
+
+      return {
+        status: Status.ERROR,
+        statusText: 'Error',
+        error: e.message,
+      }
     }
   }
 }

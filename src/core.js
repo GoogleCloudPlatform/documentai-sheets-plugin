@@ -231,14 +231,11 @@ class DataGathererFramework {
 
     // Clean up list if overrideResults.
     if (overrideResults) {
-      console.log('clearDataList.....' + options['destDatasetId']);
       this.connector.clearDataList(options['destDatasetId']);
     }
 
     // Run gatherer.
     let newResults = await this.execute(options['destDatasetId'], sources, options);
-
-    console.log(newResults);
 
     // Collect all errors.
     newResults.forEach(result => {
@@ -289,6 +286,7 @@ class DataGathererFramework {
     let extensions = options.extensions || Object.keys(this.extensions);
     let resultsToUpdate = [], allNewResults = [];
     let extResponse;
+    let multiRowsGatherer = options.multiRowsGatherer;
 
     assert(destDatasetId, 'destDatasetId is missing');
 
@@ -330,9 +328,29 @@ class DataGathererFramework {
       });
       newResult.errors = newResult.errors.concat(extResponse.errors);
 
-      // Collect sources and results for batch update if applicable.
-      resultsToUpdate.push(newResult);
-      allNewResults.push(newResult);
+      // Split array data result into multiple rows.
+      if (multiRowsGatherer) {
+        let data = newResult[multiRowsGatherer].data || [];
+        if (Array.isArray(data)) {
+          data.forEach(rowData => {
+            let rowResult = { ...newResult };
+            rowResult[multiRowsGatherer] = {
+              status: newResult.status,
+              statusText: newResult.statusText,
+              metadata: newResult.metadata,
+              data: rowData,
+              errors: newResult.errors,
+            };
+            resultsToUpdate.push(rowResult);
+            allNewResults.push(rowResult);
+          });
+        }
+
+      } else {
+        // Collect sources and results for batch update if applicable.
+        resultsToUpdate.push(newResult);
+        allNewResults.push(newResult);
+      }
 
       // Batch update to the connector if the buffer is full.
       if (this.batchUpdateBuffer &&

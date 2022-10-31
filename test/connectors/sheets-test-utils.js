@@ -59,7 +59,7 @@ const fakeSheetData = {
   ],
   fakeEmptyResultsSheetDataDocAIKeys: [
     ['', ''],
-    ['key', 'newKey'],
+    ['docai.data.key', 'docai.data.newKey'],
     ['Field Name', 'New Field Name'],
   ],
   fakeEmptyResultsSheetDataDocAI: [

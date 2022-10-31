@@ -32,7 +32,7 @@ let generateFakeSources = function (amount, options) {
       label: 'label-' + count,
       gatherer: 'fake',
       fake: {
-        settings: {
+        metadata: {
           connection: '4G',
         },
       },
@@ -62,9 +62,12 @@ let generateFakeResults = function (amount, options) {
       gatherer: 'fake',
       fake: {
         status: Status.RETRIEVED,
-        settings: {
+        metadata: {
           connection: '4G',
         },
+        data: {
+          key: 'test',
+        }
       },
       errors: [],
     };
@@ -141,9 +144,23 @@ class FakeConnector extends Connector {
 
 class FakeGatherer extends Gatherer {
   run(source) {
+    let data;
+    if (source.multiRowsData) {
+      data = [{
+        key: 'test1',
+      }, {
+        key: 'test2',
+      }]
+    } else {
+      data = {
+        key: 'test',
+      };
+    }
+
     return {
       status: Status.RETRIEVED,
-      settings: source.fake.settings,
+      metadata: (source.fake || {}).metadata,
+      data: data,
     };
   }
 }
@@ -447,4 +464,23 @@ describe('DataGathererFramework with fake modules', () => {
     results = await core.getDataList('Results-1');
     expect(results.length).toEqual(1);
   });
+
+  it('generate multiple rows with multiRowsGatherer flag', async () => {
+    let results;
+    core.connector.sources = generateFakeSources(1);
+    await core.run({
+      srcData: {
+        gatherer: 'fake',
+        metadata: {},
+        multiRowsData: true,
+      },
+      destDatasetId: 'Results-1',
+      multiRowsGatherer: 'fake',
+    });
+    results = await core.getDataList('Results-1');
+    expect(results.length).toEqual(2);
+    expect(results[0].fake.data.key).toEqual('test1');
+    expect(results[1].fake.data.key).toEqual('test2');
+  });
+
 });

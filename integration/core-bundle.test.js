@@ -193,8 +193,7 @@ describe('DataGathererFramework bundle for Sheets', () => {
   });
 
   it('submits source rows and override results to specific tabs', async () => {
-    let resultsData1 = fakeSheets['Results-1'].fakeData;
-    console.log(resultsData1);
+    let resultsData1;
 
     // Running sources and writing to Results-1 tab.
     await core.run({
@@ -202,6 +201,7 @@ describe('DataGathererFramework bundle for Sheets', () => {
       destDatasetId: 'Results-1',
     });
     // Ensure there are two additional rows in the Results tab.
+    resultsData1 = fakeSheets['Results-1'].fakeData;
     expect(resultsData1.length).toEqual(6);
 
     // Running sources and writing to Results-1 tab.
@@ -209,6 +209,7 @@ describe('DataGathererFramework bundle for Sheets', () => {
       srcDatasetId: 'Sources-1',
       destDatasetId: 'Results-1',
     });
+    resultsData1 = fakeSheets['Results-1'].fakeData;
     expect(resultsData1.length).toEqual(9);
 
     // Running sources and writing to Results-1 tab.
@@ -217,6 +218,7 @@ describe('DataGathererFramework bundle for Sheets', () => {
       destDatasetId: 'Results-1',
       overrideResults: true,
     });
+    resultsData1 = fakeSheets['Results-1'].fakeData;
     expect(resultsData1.length).toEqual(6);
   });
 
@@ -231,21 +233,24 @@ describe('DataGathererFramework bundle for Sheets', () => {
     });
   });
 
-  it('submits DocAI source json and writes DocAI parsing results to specific tab', async () => {
+  it('submits DocAI source json and writes DocAI field keys to specific tab', async () => {
     let jsonData = require('./fixtures/docai_response.json');
 
     await core.run({
       gatherer: ['docai'],
       srcData: jsonData,
       destDatasetId: 'Results-DocKeys',
+      overrideResults: true,
+      multiRowsGatherer: 'docai',
       docai: {
         fieldKeyOnly: true,
-      }
+      },
     });
 
-    let resultDataDocAI = fakeSheets['Results-DocEntities'].fakeData;
-    // console.log(resultDataDocAI)
-
-    // expect(resultDataDocAI).toEqual(null);
+    let fieldKeysData = fakeSheets['Results-DocKeys'].fakeData;
+    expect(fieldKeysData.length).toEqual(54);
+    expect(fieldKeysData[3][0]).toEqual('First Name');
+    expect(fieldKeysData[4][0]).toEqual('Year');
+    expect(fieldKeysData[5][0]).toEqual('Social Security Number:');
   });
 });
