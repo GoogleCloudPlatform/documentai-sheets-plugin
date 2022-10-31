@@ -283,9 +283,10 @@ describe('DataGathererFramework bundle for Sheets', () => {
       destDatasetId: 'Results-DocEntities',
       overrideResults: true,
       docai: {
-        keyMap: {
-          'Mailing Address (No., Street, Apt., P.O. Box)': 'address',
-        }
+        keyRemapList: [{
+          key: 'Mailing Address (No., Street, Apt., P.O. Box)',
+          newKey: 'address',
+        }]
       },
     });
 

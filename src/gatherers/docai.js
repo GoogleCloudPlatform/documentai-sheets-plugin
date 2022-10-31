@@ -81,12 +81,17 @@ class DocaiGatherer extends Gatherer {
     return fieldsKeyValue;
   }
 
-  remapKeys(data, keyMap) {
+  remapKeys(data, keyRemapList) {
     let newData = {};
+    let keyMap = {};
+
+    (keyRemapList || []).forEach(item => {
+      keyMap[item['key']] = item;
+    });
 
     Object.keys(data).forEach(key => {
-      if (keyMap[key]) {
-        newData[keyMap[key]] = data[key];
+      if (keyMap[key] && keyMap[key].newKey) {
+        newData[keyMap[key].newKey] = data[key];
       } else {
         newData[key] = data[key];
       }
@@ -100,7 +105,7 @@ class DocaiGatherer extends Gatherer {
       let errors = [];
       let documentType = (options.docai || {}).documentType;
       let fieldKeyOnly = (options.docai || {}).fieldKeyOnly;
-      let keyMap = (options.docai || {}).keyMap;
+      let keyRemapList = (options.docai || {}).keyRemapList;
       let outputData = {};
       let sourceData = this.getDocumentEntities(source);
 
@@ -111,12 +116,12 @@ class DocaiGatherer extends Gatherer {
           outputData.push({
             documentType: documentType,
             key: key,
-            newKey: key,
+            newKey: null,
           });
         });
       } else {
         outputData = sourceData;
-        if (keyMap) outputData = this.remapKeys(outputData, keyMap);
+        if (keyRemapList) outputData = this.remapKeys(outputData, keyRemapList);
       }
 
       return {
