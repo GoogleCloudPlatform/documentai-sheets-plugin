@@ -58,9 +58,9 @@ const fakeSheetData = {
     ['', 'ID', 'Type', 'Status', 'URL', 'WPT SpeedIndex'],
   ],
   fakeEmptyResultsSheetDataDocAIKeys: [
-    ['', ''],
-    ['docai.data.key', 'docai.data.newKey'],
-    ['Field Name', 'New Field Name'],
+    ['', '', ''],
+    ['docai.data.documentType', 'docai.data.key', 'docai.data.newKey'],
+    ['Document Type', 'Field Name', 'New Field Name'],
   ],
   fakeEmptyResultsSheetDataDocAIEntities: [
     ['', '', '', '', '', '', ''],

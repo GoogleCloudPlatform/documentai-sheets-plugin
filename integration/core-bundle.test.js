@@ -243,15 +243,17 @@ describe('DataGathererFramework bundle for Sheets', () => {
       overrideResults: true,
       multiRowsGatherer: 'docai',
       docai: {
+        documentType: 'fake-document-type',
         fieldKeyOnly: true,
       },
     });
 
     let fieldKeysData = fakeSheets['Results-DocKeys'].fakeData;
     expect(fieldKeysData.length).toEqual(54);
-    expect(fieldKeysData[3][0]).toEqual('First Name');
-    expect(fieldKeysData[4][0]).toEqual('Year');
-    expect(fieldKeysData[5][0]).toEqual('Social Security Number:');
+    expect(fieldKeysData[3][0]).toEqual('fake-document-type');
+    expect(fieldKeysData[3][1]).toEqual('First Name');
+    expect(fieldKeysData[4][1]).toEqual('Year');
+    expect(fieldKeysData[5][1]).toEqual('Social Security Number:');
   });
 
   it('submits DocAI source json and writes DocAI result rows to specific tab', async () => {

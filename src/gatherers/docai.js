@@ -98,6 +98,7 @@ class DocaiGatherer extends Gatherer {
   run(source, options) {
     try {
       let errors = [];
+      let documentType = (options.docai || {}).documentType;
       let fieldKeyOnly = (options.docai || {}).fieldKeyOnly;
       let keyMap = (options.docai || {}).keyMap;
       let outputData = {};
@@ -108,8 +109,9 @@ class DocaiGatherer extends Gatherer {
 
         Object.keys(sourceData).forEach(key => {
           outputData.push({
+            documentType: documentType,
             key: key,
-            newKey: null,
+            newKey: key,
           });
         });
       } else {
