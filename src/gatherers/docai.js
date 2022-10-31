@@ -117,6 +117,7 @@ class DocaiGatherer extends Gatherer {
             documentType: documentType,
             key: key,
             newKey: null,
+            sampleValue: sourceData[key].value,
           });
         });
       } else {

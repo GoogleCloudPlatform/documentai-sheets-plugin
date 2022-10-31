@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// module var is for resolving module.exports in the bundle build file.
+// For resolving module.exports in the awp build file.
 let module = {};
 let cache = CacheService.getScriptCache();
 this.core = cache.get('core');
@@ -40,13 +40,19 @@ function getCore() {
             skipColumns: 0,
             skipRows: 3,
           },
-          'Results': {
+          'Entities': {
             dataAxis: 'row',
             propertyLookup: 3, // Starts at 1
             skipColumns: 0,
+            skipRows: 4,
+          },
+          'Document Types': {
+            dataAxis: 'row',
+            propertyLookup: 2, // Starts at 1
+            skipColumns: 0,
             skipRows: 3,
           },
-          'DocumentTypes': {
+          'Document Fields': {
             dataAxis: 'row',
             propertyLookup: 2, // Starts at 1
             skipColumns: 0,
@@ -81,15 +87,16 @@ function getCore() {
 function onOpen() {
   var entries = [
     // {name: 'Authorize tool', functionName: 'onAuthorize'},
+    {name: 'About Document AI Sheets Plugin', functionName: 'about'},
     {name: 'Initialize DocSheet', functionName: 'initialize'},
     null,
-    {name: 'Select a document in Drive', functionName: 'submitDocument'},
+    {name: 'Select a sample document', functionName: 'submitDocument'},
     {name: 'Select a Driver Folder', functionName: 'submitDocument'},
     null,
-    {name: 'About DocSheet Plugin', functionName: 'about'},
+    {name: 'Retrieve Document Field Keys', functionName: 'getDocumentKeys'},
     {name: 'Test', functionName: 'test'},
   ];
-  SpreadsheetApp.getActive().addMenu('DocAI-Sheets', entries);
+  SpreadsheetApp.getActive().addMenu('Document AI', entries);
 }
 
 /**
@@ -109,36 +116,44 @@ function initialize() {
  * Submit selected PSI Tests, manually executed by users.
  */
 async function submitDocument() {
+  const jsonString = HtmlService.createHtmlOutputFromFile("sample_docai_response.json").getContent();
+  const jsonObject = JSON.parse(jsonString);
+
+  let keyRemapList =   await getCore().getDataList('Document Fields');
+  keyRemapList.forEach(item => {
+    item.key = item.docai.data.key;
+    item.newKey = item.docai.data.newKey;
+  });
+
+  console.log(keyRemapList);
+
   await getCore().run({
     gatherer: ['docai'],
-    srcData: {
-      filePath: '',
+    srcData: jsonObject,
+    destDatasetId: 'Entities',
+    docai: {
+      keyRemapList: keyRemapList,
     },
-    destDatasetId: 'Results',
-  });
-}
-
-/**
- * Helper function for submitting selected Tests.
- */
-async function submitSelectedDocumentPaths(testsTab, resultsTab, runByBatch) {
-  await getCore().run({
-    filters: ['selected'],
-    appscript: {
-      testsTab: testsTab,
-      resultsTab: resultsTab,
-    },
-    runByBatch: runByBatch,
   });
 }
 
 /**
  * Submit selected PSI Tests, manually executed by users.
  */
-async function test() {
-  let core = await getCore();
-  let data = core.connector.getDataList('DocumentTypes');
-  console.log(data);
+async function getDocumentKeys() {
+  const jsonString = HtmlService.createHtmlOutputFromFile("sample_docai_response.json").getContent();
+  const jsonObject = JSON.parse(jsonString);
+
+  await getCore().run({
+    gatherer: ['docai'],
+    srcData: jsonObject,
+    destDatasetId: 'Document Fields',
+    multiRowsGatherer: 'docai',
+    docai: {
+      documentType: 'type_test',
+      fieldKeyOnly: true,
+    },
+  });
 }
 
 /**
@@ -149,6 +164,10 @@ function clearList(tabId) {
   getCore().connector.clearList(tabId);
 }
 
+/**
+ * Helper function to prevent changes during executing a function.
+ * @param {!string} funcName
+ */
 function runWithServiceLock(funcName, callback) {
   if (!callback) return;
 
