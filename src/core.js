@@ -176,7 +176,7 @@ class DataGathererFramework {
           break;
       }
       this.gatherers[name] = new GathererClass(gathererConfig, this.envVars,
-        this.apiHandler, options);
+        this.apiHandler, options[name]);
     }
     return this.gatherers[name];
   }
@@ -308,7 +308,8 @@ class DataGathererFramework {
       let gathererNames = this.parseGathererNames(source.gatherer);
       gathererNames = gathererNames.concat(this.parseGathererNames(options.gatherer));
       [...new Set(gathererNames)].forEach(gathererName => {
-        let response = this.runGatherer(source, gathererName, options);
+        let gathererOptions = options[gathererName];
+        let response = this.runGatherer(source, gathererName, gathererOptions);
         if (response) {
           newResult[gathererName] = response;
           statuses.push(newResult[gathererName].status);
@@ -491,7 +492,10 @@ class DataGathererFramework {
   async getDataJson(datasetId, options) {
     options = options || {};
     let results = await this.connector.getDataList(datasetId, options);
-    return results;
+    if (results.length > 0) {
+      return results[0];
+    }
+    return null;
   }
 
   /**
@@ -560,4 +564,5 @@ class DataGathererFramework {
   }
 }
 
+global.module = {};
 module.exports = DataGathererFramework;

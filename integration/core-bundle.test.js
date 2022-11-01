@@ -138,7 +138,6 @@ describe('DataGathererFramework bundle for Sheets', () => {
         })
       }
     };
-
     core.connector.init();
 
     // Ensure it creates triggers for 'submitRecurringSources' and 'onEditFunc'.
@@ -234,16 +233,30 @@ describe('DataGathererFramework bundle for Sheets', () => {
   });
 
   it('submits DocAI source json and writes DocAI field keys to specific tab', async () => {
-    let jsonData = require('./fixtures/docai_response.json');
+    let contentBase64 = require('./fixtures/docai_request.json').rawDocument.content;
+    let responseJsonStr = JSON.stringify(require('./fixtures/docai_response.json'));
+
+    // Mocker API response.
+    core.connector.apiHandler.post = () => {
+      return {
+        statusCode: 200,
+        body: responseJsonStr,
+      };
+    };
 
     await core.run({
       gatherer: ['docai'],
-      srcData: jsonData,
+      srcData: {
+        documentType: 'fake-document-type',
+        contentBase64: contentBase64,
+      },
       destDatasetId: 'Results-DocKeys',
       overrideResults: true,
       multiRowsGatherer: 'docai',
       docai: {
-        documentType: 'fake-document-type',
+        authorization: 'fake-oauth-token',
+        projectId: 'fake-id',
+        processorId: 'fake-id',
         fieldKeyOnly: true,
       },
     });
@@ -257,14 +270,30 @@ describe('DataGathererFramework bundle for Sheets', () => {
   });
 
   it('submits DocAI source json and writes DocAI result rows to specific tab', async () => {
-    let jsonData = require('./fixtures/docai_response.json');
+    let contentBase64 = require('./fixtures/docai_request.json').rawDocument.content;
+    let responseJsonStr = JSON.stringify(require('./fixtures/docai_response.json'));
+
+    // Mocker API response.
+    core.connector.apiHandler.post = () => {
+      return {
+        statusCode: 200,
+        body: responseJsonStr,
+      };
+    };
 
     await core.run({
       gatherer: ['docai'],
-      srcData: jsonData,
+      srcData: {
+        documentType: 'fake-document-type',
+        contentBase64: contentBase64,
+      },
       destDatasetId: 'Results-DocEntities',
       overrideResults: true,
-      docai: {},
+      docai: {
+        authorization: 'fake-oauth-token',
+        projectId: 'fake-id',
+        processorId: 'fake-id',
+      },
     });
 
     let docEntityData = fakeSheets['Results-DocEntities'].fakeData;
@@ -275,14 +304,29 @@ describe('DataGathererFramework bundle for Sheets', () => {
   });
 
   it('submits DocAI source json and and remap DocAI keys', async () => {
-    let jsonData = require('./fixtures/docai_response.json');
+    let contentBase64 = require('./fixtures/docai_request.json').rawDocument.content;
+    let responseJsonStr = JSON.stringify(require('./fixtures/docai_response.json'));
+
+    // Mocker API response.
+    core.connector.apiHandler.post = () => {
+      return {
+        statusCode: 200,
+        body: responseJsonStr,
+      };
+    };
 
     await core.run({
       gatherer: ['docai'],
-      srcData: jsonData,
+      srcData: {
+        documentType: 'fake-document-type',
+        contentBase64: contentBase64,
+      },
       destDatasetId: 'Results-DocEntities',
       overrideResults: true,
       docai: {
+        authorization: 'fake-oauth-token',
+        projectId: 'fake-id',
+        processorId: 'fake-id',
         keyRemapList: [{
           key: 'Mailing Address (No., Street, Apt., P.O. Box)',
           newKey: 'address',
@@ -297,4 +341,26 @@ describe('DataGathererFramework bundle for Sheets', () => {
     expect(docEntityData[3][5]).toEqual('999-99-9999');
     expect(docEntityData[3][6]).toEqual('298 Stephen Circle Apt. 118 Deggyburgh, NM 01894');
   });
+
+  it('submits DocAI source json and collects overall errors', async () => {
+    core.connector.apiHandler.post = () => {
+      return {
+        statusCode: 500,
+      };
+    };
+
+    await core.run({
+      gatherer: ['docai'],
+      srcData: {
+        documentType: 'fake-document-type',
+      },
+      destDatasetId: 'Results-DocEntities',
+      overrideResults: true,
+      docai: {},
+    });
+    let docEntityData = fakeSheets['Results-DocEntities'].fakeData;
+    expect(docEntityData.length).toEqual(4);
+    expect(docEntityData[3][7]).toEqual(['[docai] projectId is missing in gathererOptions']);
+  });
+
 });

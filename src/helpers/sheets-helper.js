@@ -43,17 +43,18 @@ class SheetsApiHandler extends ApiHandler {
 
   post(url, postOptions) {
     try {
-      let fetchOptions = {
+      let requestOptions = {
         'method': 'post'
       };
 
-      if (postOptions.json) {
-        fetchOptions.payload = JSON.stringify(postOptions.json);
-        fetchOptions.contentType = 'application/json';
+      if (postOptions.payload) {
+        requestOptions.payload = JSON.stringify(postOptions.payload);
+        requestOptions.contentType = 'application/json';
+        requestOptions.headers = postOptions.headers || {};
       } else
-        fetchOptions.payload = postOptions.body;
+        requestOptions.payload = postOptions.body;
 
-      let response = UrlFetchApp.fetch(url, fetchOptions);
+      let response = UrlFetchApp.fetch(url, requestOptions);
       return {
         statusCode: response.getResponseCode(),
         body: response.getContentText()

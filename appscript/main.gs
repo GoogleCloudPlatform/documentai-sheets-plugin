@@ -17,14 +17,14 @@
 // For resolving module.exports in the awp build file.
 let module = {};
 let cache = CacheService.getScriptCache();
-this.core = cache.get('core');
+let coreInstance = cache.get('core');
 
 function getCore() {
-  this.core = cache.get('core');
+  // coreInstance = cache.get('core');
 
-  if (!this.core) {
+  if (!coreInstance) {
     console.log('Creating new Core instance...');
-    this.core = new DataGathererFramework({
+    coreInstance = new DataGathererFramework({
       connector: 'sheets',
       helper: 'sheets',
       gatherers: ['docai'],
@@ -52,7 +52,7 @@ function getCore() {
             skipColumns: 0,
             skipRows: 3,
           },
-          'Document Fields': {
+          'Fields': {
             dataAxis: 'row',
             propertyLookup: 2, // Starts at 1
             skipColumns: 0,
@@ -78,7 +78,7 @@ function getCore() {
     });
   }
 
-  return this.core;
+  return coreInstance;
 };
 
 /**
@@ -87,12 +87,11 @@ function getCore() {
 function onOpen() {
   var entries = [
     // {name: 'Authorize tool', functionName: 'onAuthorize'},
+    {name: 'Select a document from Drive', functionName: 'showPicker'},
+    null,
     {name: 'About Document AI Sheets Plugin', functionName: 'about'},
     {name: 'Initialize DocSheet', functionName: 'initialize'},
-    null,
-    {name: 'Select a sample document', functionName: 'submitDocument'},
-    {name: 'Select a Driver Folder', functionName: 'submitDocument'},
-    null,
+    {name: 'Submit sample document', functionName: 'submitDocument'},
     {name: 'Retrieve Document Field Keys', functionName: 'getDocumentKeys'},
     {name: 'Test', functionName: 'test'},
   ];
@@ -113,25 +112,31 @@ function initialize() {
 }
 
 /**
- * Submit selected PSI Tests, manually executed by users.
+ * Submit selected document.
  */
 async function submitDocument() {
-  const jsonString = HtmlService.createHtmlOutputFromFile("sample_docai_response.json").getContent();
-  const jsonObject = JSON.parse(jsonString);
+  const jsonObject = JSON.parse(HtmlService.createHtmlOutputFromFile("sample_docai_request.json").getContent());
+  const contentBase64 = jsonObject.rawDocument.content;
 
-  let keyRemapList =   await getCore().getDataList('Document Fields');
+  let keyRemapList =   await getCore().getDataList('Fields');
   keyRemapList.forEach(item => {
     item.key = item.docai.data.key;
     item.newKey = item.docai.data.newKey;
   });
 
-  console.log(keyRemapList);
+  let settings = await getCore().getDataJson('Settings');
 
   await getCore().run({
     gatherer: ['docai'],
-    srcData: jsonObject,
+    srcData: {
+      documentType: 'fake-document-type',
+      contentBase64: contentBase64,
+    },
     destDatasetId: 'Entities',
     docai: {
+      authorization: 'Bearer ' + settings.oauthToken,
+      projectId: settings.projectId,
+      processorId: 'cecddca3d1ca87e5',
       keyRemapList: keyRemapList,
     },
   });
@@ -141,13 +146,12 @@ async function submitDocument() {
  * Submit selected PSI Tests, manually executed by users.
  */
 async function getDocumentKeys() {
-  const jsonString = HtmlService.createHtmlOutputFromFile("sample_docai_response.json").getContent();
-  const jsonObject = JSON.parse(jsonString);
+  const srcData = JSON.parse(HtmlService.createHtmlOutputFromFile("sample_docai_response.json").getContent());
 
   await getCore().run({
     gatherer: ['docai'],
-    srcData: jsonObject,
-    destDatasetId: 'Document Fields',
+    srcData: srcData,
+    destDatasetId: 'Fields',
     multiRowsGatherer: 'docai',
     docai: {
       documentType: 'type_test',
@@ -162,6 +166,23 @@ async function getDocumentKeys() {
  */
 function clearList(tabId) {
   getCore().connector.clearList(tabId);
+}
+
+/**
+ * Displays an HTML-service dialog in Google Sheets that contains client-side
+ * JavaScript code for the Google Picker API.
+ */
+function showPicker() {
+  var html = HtmlService.createHtmlOutputFromFile('FilePicker.html')
+    .setWidth(600)
+    .setHeight(425)
+    .setSandboxMode(HtmlService.SandboxMode.IFRAME);
+  SpreadsheetApp.getUi().showModalDialog(html, 'Select File to Parse');
+}
+
+function getOAuthToken() {
+  DriveApp.getRootFolder();
+  return ScriptApp.getOAuthToken();
 }
 
 /**

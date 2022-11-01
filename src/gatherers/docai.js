@@ -21,7 +21,7 @@ const Status = require('../common/status');
 const Gatherer = require('./gatherer');
 
 class DocaiGatherer extends Gatherer {
-  constructor(config, envVars, apiHandler) {
+  constructor(config, envVars, apiHandler, gathererOptions) {
     super();
     assert(config, 'Parameter config is missing.');
     assert(envVars, 'Parameter apiHandler is missing.');
@@ -100,28 +100,53 @@ class DocaiGatherer extends Gatherer {
     return newData;
   }
 
-  run(source, options) {
+  run(source, gathererOptions) {
     try {
       let errors = [];
-      let documentType = (options.docai || {}).documentType;
-      let fieldKeyOnly = (options.docai || {}).fieldKeyOnly;
-      let keyRemapList = (options.docai || {}).keyRemapList;
+      let fieldKeyOnly = gathererOptions.fieldKeyOnly;
+      let keyRemapList = gathererOptions.keyRemapList;
+      let projectId = gathererOptions.projectId;
+      let processorId = gathererOptions.processorId;
+      let authorization = gathererOptions.authorization;
+      let documentType = source.documentType;
+      let contentBase64 = source.contentBase64;
       let outputData = {};
-      let sourceData = this.getDocumentEntities(source);
+
+      assert(projectId, 'projectId is missing in gathererOptions');
+      assert(processorId, 'processorId is missing in gathererOptions');
+      assert(authorization, 'authorization is missing in gathererOptions');
+      assert(contentBase64, 'contentBase64 is missing in gathererOptions');
+
+      // Make API call to DocAI endpoint.
+      let requestOptions = {
+        'payload': {
+          'rawDocument': {
+            'mimeType': 'application/pdf',
+            'content': contentBase64,
+          }
+        },
+        'headers': {
+          'Authorization': authorization,
+        },
+      };
+      let url = `https://us-documentai.googleapis.com/v1/projects/${projectId}/locations/us/processors/${processorId}:process`;
+      let response = this.apiHandler.post(url, requestOptions);
+      let responseJson = JSON.parse(response.body);
+      let parsedData = this.getDocumentEntities(responseJson);
 
       if (fieldKeyOnly) {
         outputData = [];
 
-        Object.keys(sourceData).forEach(key => {
+        Object.keys(parsedData).forEach(key => {
           outputData.push({
             documentType: documentType,
             key: key,
             newKey: null,
-            sampleValue: sourceData[key].value,
+            sampleValue: parsedData[key].value,
           });
         });
       } else {
-        outputData = sourceData;
+        outputData = parsedData;
         if (keyRemapList) outputData = this.remapKeys(outputData, keyRemapList);
       }
 
@@ -134,12 +159,10 @@ class DocaiGatherer extends Gatherer {
       }
 
     } catch (e) {
-      console.error(e);
-
       return {
         status: Status.ERROR,
         statusText: 'Error',
-        error: e.message,
+        errors: e.message,
       }
     }
   }

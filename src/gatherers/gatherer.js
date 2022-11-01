@@ -22,25 +22,15 @@ class Gatherer {
    * @param  {object} apiHandler API handler instance.
    * @param  {object} options Options object.
    */
-  constructor(config, envVars, apiHandler, options) { }
+  constructor(config, envVars, apiHandler, gathererOptions) { }
 
   /**
    * Run a single source.
    * @param  {object} source A source object.
-   * @param  {object} options Options object.
+   * @param  {object} gathererOptions Options object.
    * @return {object} Response object, including status proeprty.
    */
-  run(source, options) {
-    return null; // Return null by default.
-  }
-
-  /**
-   * Run a list of Sources in batch.
-   * @param  {Array<object>} sources List of source objects.
-   * @param  {object} options Options object.
-   * @return {object} Response object, including status proeprty.
-   */
-  async runBatchAsync(sources, options) {
+  run(source, gathererOptions) {
     return null; // Return null by default.
   }
 
@@ -50,7 +40,7 @@ class Gatherer {
    * @param  {object} options Options object.
    * @return {object} Response object, including status proeprty.
    */
-  retrieve(result, options) {
+  retrieve(result, gathererOptions) {
     return null; // Return null by default.
   }
 
