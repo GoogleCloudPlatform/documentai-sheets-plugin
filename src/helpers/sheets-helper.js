@@ -60,8 +60,9 @@ class SheetsApiHandler extends ApiHandler {
         body: response.getContentText()
       }
     } catch (e) {
-      console.error('There was an error while fetching ' + url);
+      console.error('SheetsApiHandler: There was an error while sending post request to ' + url);
       console.error(e);
+      console.error(e.message);
 
       return {
         statusCode: e.code || 500,

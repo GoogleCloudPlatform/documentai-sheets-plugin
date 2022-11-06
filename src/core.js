@@ -470,9 +470,9 @@ class DataGathererFramework {
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
    */
-  async getDataList(datasetId, options) {
+  getDataList(datasetId, options) {
     options = options || {};
-    let results = await this.connector.getDataList(datasetId, options);
+    let results = this.connector.getDataList(datasetId, options);
     return results;
   }
 
@@ -489,9 +489,9 @@ class DataGathererFramework {
    * - verbose {boolean}: Whether to show verbose messages in terminal.
    * - debug {boolean}: Whether to show debug messages in terminal.
    */
-  async getDataJson(datasetId, options) {
+  getDataJson(datasetId, options) {
     options = options || {};
-    let results = await this.connector.getDataList(datasetId, options);
+    let results = this.connector.getDataList(datasetId, options);
     if (results.length > 0) {
       return results[0];
     }
@@ -530,17 +530,12 @@ class DataGathererFramework {
     [...new Set(gathererNames)].forEach(gathererName => {
       if (!result[gathererName]) return;
 
-      let errors = result[gathererName].errors || [];
-      if (!Array.isArray(errors)) errors = [errors];
+      let error = result[gathererName].error;
 
       // Add data source prefix to all error messages.
-      (errors || []).forEach(error => {
-        if (error && error.message) {
-          overallErrors.push(`[${gathererName}] ` + error.message);
-        } else {
-          overallErrors.push(`[${gathererName}] ` + error);
-        }
-      });
+      if (error) {
+        overallErrors.push(`[${gathererName}] ` + error);
+      }
     });
     return overallErrors.filter(e => e);
   }

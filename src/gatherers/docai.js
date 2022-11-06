@@ -102,7 +102,6 @@ class DocaiGatherer extends Gatherer {
 
   run(source, gathererOptions) {
     try {
-      let errors = [];
       let fieldKeyOnly = gathererOptions.fieldKeyOnly;
       let keyRemapList = gathererOptions.keyRemapList;
       let projectId = gathererOptions.projectId;
@@ -131,6 +130,16 @@ class DocaiGatherer extends Gatherer {
       };
       let url = `https://us-documentai.googleapis.com/v1/projects/${projectId}/locations/us/processors/${processorId}:process`;
       let response = this.apiHandler.post(url, requestOptions);
+      if (response.statusCode !== 200) {
+        return {
+          status: Status.ERROR,
+          statusText: 'Error',
+          metadata: {},
+          errorMessage: this.getErrorMessage(response),
+          error: response,
+        };
+      }
+
       let responseJson = JSON.parse(response.body);
       let parsedData = this.getDocumentEntities(responseJson);
 
@@ -155,16 +164,23 @@ class DocaiGatherer extends Gatherer {
         statusText: 'Success',
         metadata: {},
         data: outputData,
-        errors: errors,
       }
 
     } catch (e) {
       return {
         status: Status.ERROR,
         statusText: 'Error',
-        errors: e.message,
+        error: e.message,
+        errorDetail: e,
       }
     }
+  }
+
+  getErrorMessage(response) {
+    if (response.error.message.includes('Request is missing required authentication credential')) {
+      return 'Missing required authentication token. Please check your OAuth token.';
+    }
+    return response.error.message;
   }
 }
 

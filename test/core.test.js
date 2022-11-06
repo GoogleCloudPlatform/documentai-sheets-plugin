@@ -420,7 +420,8 @@ describe('DataGathererFramework with fake modules', () => {
       gatherer: 'fake',
       fake: {
         status: Status.ERROR,
-        errors: [new Error('Fake error')],
+        error: 'Fake error',
+        errorDetail: new Error('Fake error')
       },
     };
     errors = core.getOverallErrors(result);
