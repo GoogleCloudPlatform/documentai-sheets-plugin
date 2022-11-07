@@ -135,8 +135,8 @@ class DocaiGatherer extends Gatherer {
           status: Status.ERROR,
           statusText: 'Error',
           metadata: {},
-          errorMessage: this.getErrorMessage(response),
-          error: response,
+          error: this.getErrorMessage(response),
+          errorDetail: response,
         };
       }
 

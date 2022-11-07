@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css" />
+  <script type="text/javascript">
+    let DIALOG_DIMENSIONS = {
+      width: 900,
+      height: 525,
+    };
+    let pickerApiLoaded = false;
+
+    function onApiLoad() {
+      gapi.load('picker', {
+        callback: function () {
+          pickerApiLoaded = true;
+        },
+      });
+      google.script.run
+        .withSuccessHandler(createPicker)
+        .withFailureHandler(showError)
+        .getOAuthToken();
+    }
+
+    function createPicker(token) {
+      if (pickerApiLoaded && token) {
+        let docsView = new google.picker.DocsView()
+          .setIncludeFolders(false)
+          .setMimeTypes('application/pdf', 'application/vnd.google-apps.file', 'image/jpg', 'image/png')
+          .setLabel("Files")
+          .setSelectFolderEnabled(false);
+
+        // let folderView = new google.picker.DocsView()
+        //   .setIncludeFolders(true)
+        //   .setMimeTypes('application/vnd.google-apps.folder')
+        //   .setLabel("Folders")
+        //   .setSelectFolderEnabled(true);
+
+        let picker = new google.picker.PickerBuilder()
+          .addView(docsView)
+          // .addView(folderView)
+          //.enableFeature(google.picker.Feature.NAV_HIDDEN)
+          .hideTitleBar()
+          .setSize(DIALOG_DIMENSIONS.width - 20, DIALOG_DIMENSIONS.height - 20)
+          .setOAuthToken(token)
+          .setCallback(pickerCallback)
+          .setOrigin('https://docs.google.com')
+          .build()
+          .setVisible(true);
+
+      } else {
+        showError('Unable to load the file picker.');
+      }
+    }
+
+    /**
+     * A callback function that extracts the chosen document's metadata from the
+     * response object. For details on the response object, see
+     * https://developers.google.com/picker/docs/result
+     *
+     * @param {object} data The response object.
+     */
+    function pickerCallback(data) {
+      let action = data[google.picker.Response.ACTION];
+      if (action == google.picker.Action.PICKED) {
+        let doc = data[google.picker.Response.DOCUMENTS][0];
+        let url = doc[google.picker.Document.URL];
+        let id = doc[google.picker.Document.ID];
+        let name = doc[google.picker.Document.NAME];
+        // Show the ID of the Google Drive folder
+        google.script.run.pickerCallbackFunc(id, name, url);
+        // google.script.host.close();
+      } else if (action == google.picker.Action.CANCEL) {
+        google.script.host.close();
+      }
+    }
+
+    function showError(message) {
+      document.getElementById('result').innerHTML = 'Error: ' + message;
+    }
+  </script>
+</head>
+
+<body>
+  <div>
+    <p id="result"></p>
+  </div>
+  <script type="text/javascript" src="https://apis.google.com/js/api.js?onload=onApiLoad"></script>
+</body>
+
+</html>

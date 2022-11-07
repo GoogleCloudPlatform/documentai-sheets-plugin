@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons.css" />
+  <!-- <link href="//cdn.muicss.com/mui-0.10.3/css/mui.min.css" rel="stylesheet" type="text/css" />
+    <script src="//cdn.muicss.com/mui-0.10.3/js/mui.min.js"></script> -->
+  <style>
+    h3 {
+      font-size: 14px;
+    }
+
+    hr {
+      height: 0;
+      border: none;
+      border-bottom: 1px solid #aaa;
+      margin-bottom: 2em;
+    }
+
+    #processorList {
+      width: 60%;
+      height: 3em;
+      min-width: 400px;
+      padding: 10px;
+      font-size: 14px;
+      text-align: left;
+      margin-bottom: 30px;
+    }
+
+    .file-selector-area {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background-color: #f4f4f4;
+      padding: 20px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .filename {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .file-picker-button {
+      flex: right;
+    }
+
+    .loading-panel {}
+  </style>
+</head>
+
+<body onload="onLoad()">
+  <!-- Modified -->
+  <div class="block form-group">
+    <hr>
+    <h3 for="select">Select a file from Drive</h3>
+    <br>
+
+    <div class="file-selector-area">
+      <? if (fileName) { ?>
+      <span class="filename">
+        <?=fileName?>
+      </span>
+      <button id="filePickerButton" class="action file-picker-button" onClick="showFilePicker()">Change</button>
+      <? } else { ?>
+      <button id="filePickerButton" class="action" onClick="showFilePicker()">Select a File</button>
+      <? } ?>
+    </div>
+
+    <hr>
+    <h3 for="select">Select Document AI processor</h3>
+    <div>
+      <select id="processorList">
+        <option>Loading...</option>
+      </select>
+      <button class="action" onClick="refreshProcessorList()">Refresh</button>
+    </div>
+  </div>
+
+  <br /><br />
+  <hr>
+  <div>
+    <button id="submitButton" class="action" onClick="onSubmit()" disabled>Submit</button>
+    <button id="cancelButton" onClick="onClose()">Cancel</button>
+  </div>
+</body>
+
+<script>
+  function onLoad() {
+    google.script.run
+      .withFailureHandler(onFailure)
+      .withSuccessHandler(addProcessorOptions)
+      .getDocumentTypes();
+  }
+
+  function showFilePicker() {
+    google.script.run.setCacheValue('selectedDocumentType', getSelectedDocumentType());
+    google.script.run
+      .withFailureHandler(onFailure)
+      .withSuccessHandler(onClose)
+      .showFilePicker();
+  }
+
+  function refreshProcessorList() {
+    let list = document.getElementById('processorList');
+    list.innerHTML = '<option>Loading...</option>';
+
+    google.script.run
+      .withFailureHandler(onFailure)
+      .withSuccessHandler(addProcessorOptions)
+      .refreshDocumentTypes();
+  }
+
+  function getSelectedDocumentType() {
+    let e = document.getElementById("processorList");
+    let value = e.options[e.selectedIndex].value;
+    return e.options[e.selectedIndex].text;
+  }
+
+  function addProcessorOptions(documentTypes) {
+    let list = document.getElementById('processorList');
+    let selectedDocumentType = google.script.run.getCacheValue('selectedDocumentType');
+    list.innerHTML = "";
+
+    documentTypes.forEach(documentTypeItem => {
+      var option = document.createElement("option"); // Modified
+      // option.innerText = `${documentTypeItem.documentType} (processorId: ${documentTypeItem.processorId})`;
+      option.innerText = documentTypeItem.documentType;
+      option.value = documentTypeItem.processorId; // Modified
+      if (selectedDocumentType === documentTypeItem.documentType) {
+        option.selected = true;
+      }
+      list.appendChild(option); // Modified
+    });
+
+    document.getElementById('submitButton').disabled = false;
+  }
+
+  function onSubmit() {
+    let documentType = getSelectedDocumentType();
+    let fileId = '<?=fileId ?>';
+    let button = document.getElementById('submitButton');
+    button.innerText = "Processing...";
+    button.disabled = true;
+    document.getElementById('filePickerButton').disabled = true;
+
+    google.script.run
+      .withFailureHandler(onFailure)
+      .withSuccessHandler(onClose)
+      .submitDocument(documentType, fileId);
+  }
+
+  function onClose() {
+    google.script.host.close();
+  }
+
+  function onFailure(err) {
+    alert('There was an error!' + err.message);
+  }
+</script>
+
+<html>
