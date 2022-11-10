@@ -34,11 +34,45 @@ class DocaiGatherer extends Gatherer {
 
   getDocumentEntities(jsonData) {
     let document = jsonData.document;
-    let formFields = [];
-    (document.pages || []).forEach(page => {
-      formFields = formFields.concat(page.formFields);
-    })
 
+    // Get entities from a specialized parser result.
+    if (document.entities) {
+      return this.getSpecialParserEntities(document.entities);
+
+      // Get entities from a Form Parser result.
+    } else {
+      let formFields = [];
+      (document.pages || []).forEach(page => {
+        formFields = formFields.concat(page.formFields);
+      })
+      return this.getFormEntities(formFields);
+    }
+  }
+
+  getSpecialParserEntities(entities) {
+    let fieldsKeyValue = {};
+    entities.forEach(entity => {
+      let key = entity.type;
+      let value = entity.mentionText;
+      let error = null;
+
+      // Remove linebreaks.
+      key = key.replace(/(\r\n|\n|\r)/gm, ' ').trim();
+      if (typeof value === 'string') {
+        value = value.replace(/(\r\n|\n|\r)/gm, ' ').trim();
+      };
+
+      fieldsKeyValue[key] = {
+        value: value,
+        confidence: entity.confidence,
+        error: error,
+      };
+    });
+
+    return fieldsKeyValue;
+  }
+
+  getFormEntities(formFields) {
     let fieldsKeyValue = {};
     formFields.forEach(field => {
       let key = field.fieldName.textAnchor.content;
@@ -66,9 +100,9 @@ class DocaiGatherer extends Gatherer {
       }
 
       // Remove linebreaks.
-      key = key.replace(/(\r\n|\n|\r)/gm, '');
+      key = key.replace(/(\r\n|\n|\r)/gm, ' ').trim();
       if (typeof value === 'string') {
-        value = value.replace(/(\r\n|\n|\r)/gm, '')
+        value = value.replace(/(\r\n|\n|\r)/gm, ' ').trim();
       };
 
       fieldsKeyValue[key] = {
@@ -77,7 +111,6 @@ class DocaiGatherer extends Gatherer {
         error: error,
       };
     });
-
     return fieldsKeyValue;
   }
 
@@ -141,21 +174,21 @@ class DocaiGatherer extends Gatherer {
       }
 
       let responseJson = JSON.parse(response.body);
-      let parsedData = this.getDocumentEntities(responseJson);
+      let entities = this.getDocumentEntities(responseJson);
 
       if (fieldKeyOnly) {
         outputData = [];
 
-        Object.keys(parsedData).forEach(key => {
+        Object.keys(entities).forEach(key => {
           outputData.push({
             documentType: documentType,
             key: key,
-            newKey: null,
-            sampleValue: parsedData[key].value,
+            newKey: key,
+            sampleValue: entities[key].value,
           });
         });
       } else {
-        outputData = parsedData;
+        outputData = entities;
         if (keyRemapList) outputData = this.remapKeys(outputData, keyRemapList);
       }
 
@@ -167,6 +200,8 @@ class DocaiGatherer extends Gatherer {
       }
 
     } catch (e) {
+      // console.error(e);
+
       return {
         status: Status.ERROR,
         statusText: 'Error',

@@ -74,9 +74,9 @@ function getCore() {
       documentTypeMap[documentTypeItem.documentType] = documentTypeItem;
       coreInstance.coreConfig.sheets.tabs[documentTypeItem.destDatasetId] = {
         dataAxis: 'row',
-        propertyLookup: 4, // Starts at 1
+        propertyLookup: 3, // Starts at 1
         skipColumns: 0,
-        skipRows: 4,
+        skipRows: 3,
       };
     });
   }
@@ -89,14 +89,13 @@ function getCore() {
  */
 function onOpen() {
   var entries = [
-    {name: 'Select a Document', functionName: 'showFilePicker'},
-    null,
-    // {name: 'Authorize tool', functionName: 'onAuthorize'},
-    {name: 'About Document AI Sheets Plugin', functionName: 'about'},
+    {name: 'About this plugin', functionName: 'about'},
     {name: 'Initialize', functionName: 'initialize'},
     null,
-    {name: '🧪 Process sample document', functionName: 'processSampleDocument'},
-    // {name: '🧪 Test with retrieve sample document fields', functionName: 'processSampleDocumentFields'},
+    {name: 'Process a document in Drive', functionName: 'showFilePicker'},
+    // null,
+    // {name: '🧪 Process sample document', functionName: 'submitSampleDocument'},
+    // {name: '🧪 Retrieve sample document fields', functionName: 'submitSampleDocumentFields'},
     // {name: 'Test', functionName: 'test'},
   ];
   SpreadsheetApp.getActive().addMenu('📄 Document AI', entries);
@@ -111,10 +110,16 @@ function initialize() {
   getCore().connector.init();
 }
 
+async function submitDocument(documentType, fileId) {
+  let file = DriveApp.getFileById(fileId);
+  let contentBase64 = Utilities.base64Encode(file.getBlob().getBytes());
+  await processDocument(documentType, contentBase64);
+}
+
 /**
  * Submit selected document.
  */
-async function processSampleDocument() {
+async function submitSampleDocument() {
   const jsonObject = JSON.parse(HtmlService.createHtmlOutputFromFile("sample_docai_request.json").getContent());
   const contentBase64 = jsonObject.rawDocument.content;
   await processDocument('Application Form', contentBase64);
@@ -155,16 +160,31 @@ async function processDocument(documentType, contentBase64, isGetDocumentFields)
   }
 }
 
-async function processSampleDocumentFields() {
-  const jsonObject = JSON.parse(HtmlService.createHtmlOutputFromFile("sample_docai_request.json").getContent());
-  const contentBase64 = jsonObject.rawDocument.content;
-  await retrieveDocumentFields('Application Form', contentBase64);
+/**
+ * Submit a document and process document fields
+ */
+async function submitDocumentFields(documentType, fileId) {
+  console.log('fileId: ' + fileId);
+  console.log('documentType: ' + documentType);
+
+  let file = DriveApp.getFileById(fileId);
+  let contentBase64 = Utilities.base64Encode(file.getBlob().getBytes());
+  await processDocumentFields(documentType, contentBase64);
 }
 
 /**
- * Submit selected PSI Tests, manually executed by users.
+ * Submit a sample document and process document fields
  */
-async function retrieveDocumentFields(documentType, contentBase64) {
+async function submitSampleDocumentFields() {
+  const jsonObject = JSON.parse(HtmlService.createHtmlOutputFromFile("sample_docai_request.json").getContent());
+  const contentBase64 = jsonObject.rawDocument.content;
+  await processDocumentFields('Application Form', contentBase64);
+}
+
+/**
+ * Retreive document fields and add rows to Fields tab.
+ */
+async function processDocumentFields(documentType, contentBase64) {
   let settings = getCore().getDataJson('Settings');
   let response = await getCore().run({
     gatherer: ['docai'],
@@ -181,6 +201,8 @@ async function retrieveDocumentFields(documentType, contentBase64) {
       fieldKeyOnly: true,
     },
   });
+
+  console.log(response.results);
 
   if (response.errors && response.errors.length > 0) {
     SpreadsheetApp.getUi().alert(response.errors);
@@ -252,12 +274,6 @@ function showFinalDialog(fileId, fileName, fileUrl, documentType) {
 function pickerCallbackFunc(fileId, fileName, fileUrl) {
   let documentType = cache.get('selectedDocumentType');
   showFinalDialog(fileId, fileName, fileUrl, documentType);
-}
-
-async function submitDocument(documentType, fileId) {
-  let file = DriveApp.getFileById(fileId);
-  let contentBase64 = Utilities.base64Encode(file.getBlob().getBytes());
-  await processDocument(documentType, contentBase64);
 }
 
 /**

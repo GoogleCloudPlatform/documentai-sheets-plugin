@@ -53,6 +53,7 @@ describe('DataGathererFramework bundle for Sheets', () => {
       'Results-2': initFakeSheet(fakeSheetData.fakeEmptyResultsSheetData),
       'Results-DocKeys': initFakeSheet(fakeSheetData.fakeEmptyResultsSheetDataDocAIKeys),
       'Results-DocEntities': initFakeSheet(fakeSheetData.fakeEmptyResultsSheetDataDocAIEntities),
+      'Results-DriverLicense': initFakeSheet(fakeSheetData.fakeEmptyResultsSheetDataDriverLicenseEntities),
     };
 
     let coreConfig = {
@@ -97,6 +98,12 @@ describe('DataGathererFramework bundle for Sheets', () => {
             skipRows: 3,
           },
           'Results-DocEntities': {
+            dataAxis: 'row',
+            propertyLookup: 2, // Starts at 1
+            skipColumns: 0,
+            skipRows: 3,
+          },
+          'Results-DriverLicense': {
             dataAxis: 'row',
             propertyLookup: 2, // Starts at 1
             skipColumns: 0,
@@ -262,7 +269,7 @@ describe('DataGathererFramework bundle for Sheets', () => {
     });
 
     let fieldKeysData = fakeSheets['Results-DocKeys'].fakeData;
-    expect(fieldKeysData.length).toEqual(54);
+    expect(fieldKeysData.length).toEqual(52);
     expect(fieldKeysData[3][0]).toEqual('fake-document-type');
     expect(fieldKeysData[3][1]).toEqual('First Name');
     expect(fieldKeysData[4][1]).toEqual('Year');
@@ -340,6 +347,40 @@ describe('DataGathererFramework bundle for Sheets', () => {
     expect(docEntityData[3][4]).toEqual('Darker');
     expect(docEntityData[3][5]).toEqual('999-99-9999');
     expect(docEntityData[3][6]).toEqual('298 Stephen Circle Apt. 118 Deggyburgh, NM 01894');
+  });
+
+  it('submits DocAI with driver license and writes DocAI result rows to specific tab', async () => {
+    let contentBase64 = require('./fixtures/docai_request.json').rawDocument.content;
+    let responseJsonStr = JSON.stringify(require('./fixtures/docai_response_driver_license.json'));
+
+    // Mocker API response.
+    core.connector.apiHandler.post = () => {
+      return {
+        statusCode: 200,
+        body: responseJsonStr,
+      };
+    };
+
+    await core.run({
+      gatherer: ['docai'],
+      srcData: {
+        documentType: 'fake-document-type',
+        contentBase64: contentBase64,
+      },
+      destDatasetId: 'Results-DriverLicense',
+      overrideResults: true,
+      docai: {
+        authorization: 'fake-oauth-token',
+        projectId: 'fake-id',
+        processorId: 'fake-id',
+      },
+    });
+
+    let docEntityData = fakeSheets['Results-DriverLicense'].fakeData;
+    expect(docEntityData.length).toEqual(4);
+    expect(docEntityData[3][3]).toEqual('Adam Jason');
+    expect(docEntityData[3][4]).toEqual('Parker');
+    expect(docEntityData[3][5]).toEqual('298 Stephen Circle Apt. 118 Peggyburgh, NM 01894');
   });
 
   it('submits DocAI source json and collects overall errors', async () => {

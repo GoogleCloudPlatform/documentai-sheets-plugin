@@ -67,6 +67,11 @@ const fakeSheetData = {
     ['selected', 'id', 'status', 'docai.data["First Name"].value', 'docai.data["Last Name"].value', 'docai.data["Social Security Number:"].value', 'docai.data.address.value', 'errors'],
     ['', 'ID', 'Status', 'First Name', 'Last Name', 'Social Security Number', 'Address', 'Errors'],
   ],
+  fakeEmptyResultsSheetDataDriverLicenseEntities: [
+    ['', '', '', '', '', '', '', ''],
+    ['selected', 'id', 'status', 'docai.data["Given Names"].value', 'docai.data["Family Name"].value', 'docai.data["Address"].value', 'errors'],
+    ['', 'ID', 'Status', 'Given Names', 'Family Name', 'Address', 'Errors'],
+  ],
 }
 
 const initSheetData = (fakeData) => {

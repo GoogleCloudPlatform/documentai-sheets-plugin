@@ -83,6 +83,7 @@
   <hr>
   <div>
     <button id="submitButton" class="action" onClick="onSubmit()" disabled>Submit</button>
+    <button id="retrieveFieldsButton" onClick="onRetrieveFields()" disabled>Retrieve Field Keys</button>
     <button id="cancelButton" onClick="onClose()">Cancel</button>
   </div>
 </body>
@@ -136,20 +137,35 @@
     });
 
     document.getElementById('submitButton').disabled = false;
+    document.getElementById('retrieveFieldsButton').disabled = false;
   }
 
   function onSubmit() {
     let documentType = getSelectedDocumentType();
     let fileId = '<?=fileId ?>';
-    let button = document.getElementById('submitButton');
-    button.innerText = "Processing...";
-    button.disabled = true;
+    document.getElementById('submitButton').innerText = "Processing...";
+    document.getElementById('submitButton').disabled = true;
+    document.getElementById('retrieveFieldsButton').disabled = true;
     document.getElementById('filePickerButton').disabled = true;
 
     google.script.run
       .withFailureHandler(onFailure)
       .withSuccessHandler(onClose)
       .submitDocument(documentType, fileId);
+  }
+
+  function onRetrieveFields() {
+    let documentType = getSelectedDocumentType();
+    let fileId = '<?=fileId ?>';
+    document.getElementById('retrieveFieldsButton').innerText = "Processing...";
+    document.getElementById('submitButton').disabled = true;
+    document.getElementById('retrieveFieldsButton').disabled = true;
+    document.getElementById('filePickerButton').disabled = true;
+
+    google.script.run
+      .withFailureHandler(onFailure)
+      .withSuccessHandler(onClose)
+      .submitDocumentFields(documentType, fileId);
   }
 
   function onClose() {
