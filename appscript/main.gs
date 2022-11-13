@@ -107,7 +107,6 @@ function onOpen() {
 function initialize() {
   UrlFetchApp.fetch('https://google.com');
   Browser.msgBox('This sheet has been authorized!');
-  getCore().connector.init();
 }
 
 async function submitDocument(documentType, fileId) {
