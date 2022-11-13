@@ -90,8 +90,8 @@ function getCore() {
 function onOpen() {
   var entries = [
     {name: 'About this plugin', functionName: 'about'},
-    // {name: 'Initialize', functionName: 'initialize'},
     null,
+    {name: 'Initialize', functionName: 'initialize'},
     {name: 'Process a document in Drive', functionName: 'showFilePicker'},
     // null,
     // {name: '🧪 Process sample document', functionName: 'submitSampleDocument'},
