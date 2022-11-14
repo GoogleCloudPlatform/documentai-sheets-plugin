@@ -27,7 +27,6 @@ class DocaiGatherer extends Gatherer {
     assert(envVars, 'Parameter apiHandler is missing.');
     assert(apiHandler, 'Parameter apiHandler is missing.');
 
-    this.runApiEndpoint = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
     this.apiKey = envVars.GCP_APIKEY;
     this.apiHandler = apiHandler;
   };
@@ -169,7 +168,8 @@ class DocaiGatherer extends Gatherer {
           statusText: 'Error',
           metadata: {},
           error: this.getErrorMessage(response),
-          errorDetail: response,
+          errorDetail: `Sent request to ${url}`,
+          errorResponse: response,
         };
       }
 
