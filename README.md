@@ -11,7 +11,7 @@ This section covers the steps to set up the DocumentAI Sheets Plugin demo using 
 
 ### Make a copy of the Demo Spreadsheet
 
-- Go to [bit.ly/documentai-sheets-demo](https://bit.ly/documentai-sheets-demo) and make a copy of the Sheets.
+- Make a copy of [the sample Spreadsheet](https://docs.google.com/spreadsheets/d/1ComO4SXpwHH5ASl5EThDxEn3rJFsQrVHdYdD4z3i1Us/copy)
 
 ### Setting Up
 
